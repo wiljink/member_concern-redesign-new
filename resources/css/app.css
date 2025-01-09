@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+a.disabled, button.disabled {
+    pointer-events: none;
+    color: grey;
+    cursor: not-allowed;
+}
+
+
