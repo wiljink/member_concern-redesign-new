@@ -103,9 +103,11 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="analyzeForm" action="{{ route('concerns.endorsebm') }}" method="POST">
+                <!-- <form id="analyzeForm" action="{{ route('concerns.endorsebm') }}" method="POST"> -->
+                <form id="analyzeForm" action="{{ route('posts.analyze') }}" method="POST">
+
                     @csrf
-                    @method('put')
+                    @method('post')
 
                     <!-- Hidden input for the post ID -->
                     <input type="hidden" name="posts_id" id="posts_id" value="">

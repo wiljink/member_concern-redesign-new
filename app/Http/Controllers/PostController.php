@@ -106,16 +106,19 @@ class PostController extends Controller
     public function endorsebm()
     {
         
+        
           // Fetch branch data from the external API
           $response1 = Http::get('https://loantracker.oicapp.com/api/v1/branches');
           $branches = $response1->json();
-      
+
           // Get the authenticated user's data
           $token = session('token');
           $response2 = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
           $authenticatedUser = $response2->json();
       
-          $posts = Post::where('status', 'Endorsed')->paginate(10);
+          $posts = Post::whereIn('status', ['Endorsed', 'In progress'])->paginate(10);
+
+          
 
         return view('posts.endorse_bm', [
             'data' => $posts,
@@ -142,6 +145,98 @@ class PostController extends Controller
             'branches' => $branches['branches'],
             'authenticatedUser' => $authenticatedUser['user'],
         ]);
+    }
+
+    public function analyze(Request $request)
+    {
+        try {
+            // Validate incoming request data
+            $validatedData = $request->validate([
+                'posts_id' => 'required|integer|exists:posts,id',
+                'tasks' => 'nullable|array',
+                'tasks.*' => 'string|min:1', // Ensure each task is a valid string
+                'removed_tasks' => 'nullable|array',
+                'removed_tasks.*' => 'string|min:1', // Ensure removed tasks are valid strings
+                'status' => 'required|string|in:Resolved,In Progress',
+            ]);
+
+            // Find the post by ID
+            $post = Post::findOrFail($validatedData['posts_id']);
+
+            // Decode existing tasks
+            $existingTasks = $post->tasks ? json_decode($post->tasks, true) : [];
+
+            // Merge new tasks
+            if (!empty($validatedData['tasks'])) {
+                $existingTasks = array_unique(array_merge($existingTasks, $validatedData['tasks']));
+            }
+
+            // Remove specified tasks
+            if (!empty($validatedData['removed_tasks'])) {
+                $existingTasks = array_filter($existingTasks, function ($task) use ($validatedData) {
+                    return !in_array($task, $validatedData['removed_tasks']);
+                });
+            }
+
+            // Update tasks
+            $post->tasks = json_encode(array_values($existingTasks));
+
+            // Handle status updates
+            $currentTime = Carbon::now();
+            if ($validatedData['status'] === 'Resolved' && $post->status === 'In Progress') {
+                // Fetch logged user details from the session or API
+                $fullname = session('logged_user_fullname'); // Assuming this is cached in session
+                if (!$fullname) {
+                    $token = session('token');
+                    $response = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
+                    $loggedUser = $response->json();
+                    $fullname = $loggedUser['user']['fullname'] ?? 'Unknown';
+                    session(['logged_user_fullname' => $fullname]);
+                }
+
+                $post->resolve_by = $fullname;
+                $post->endorsed_date = $post->endorsed_date ?: $currentTime;
+                $post->status = 'Resolved';
+                $post->resolved_date = $currentTime;
+
+                $endorsedDate = Carbon::parse($post->endorsed_date);
+                $resolvedDays = $endorsedDate->diff($currentTime);
+
+                $post->resolved_days = json_encode([
+                    'total_difference' => $resolvedDays->format('%a days, %h hours, %i minutes, %s seconds'),
+                    'days' => $resolvedDays->d,
+                    'hours' => $resolvedDays->h,
+                    'minutes' => $resolvedDays->i,
+                    'seconds' => $resolvedDays->s,
+                ]);
+            } else {
+                $post->status = 'In Progress';
+            }
+
+            // Save post
+            $post->save();
+
+            // Return success message
+            $message = $post->status === 'In Progress'
+                ? 'Progress saved successfully.'
+                : 'Concern successfully resolved and archived.';
+
+            return redirect()->route('posts.index')->with('success', $message);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->validator)
+                ->withInput();
+        } catch (\Exception $e) {
+            FacadesLog::error('Post analyze error', [
+                'exception' => $e,
+                'post_id' => $request->input('posts_id'),
+                'request_data' => $request->all(),
+            ]);
+             return redirect()->back()->with('error', 'An error occurred while processing your request.');
+            // return redirect()->route('posts.index')->with('success', $message);
+
+        }
     }
 
     public function resolveho()

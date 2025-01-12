@@ -126,18 +126,6 @@
         </div>
     </div>
 
-
-    <!-- Blade Template: Access authenticated user data -->
-
-
-   
-
-
-
-
-    
-
-
     <!-- endorseModal Form and disable endorse link -->
     <script>
         $(document).ready(function() {
@@ -203,6 +191,4 @@
         });
     </script>
 
-   
-    
 </x-app-layout>

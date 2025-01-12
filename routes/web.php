@@ -8,7 +8,7 @@ use App\Http\Middleware\GuestMiddleware;
 use App\Http\Middleware\LoginMiddleware;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect(route('login'));
 });
 
 Route::get('/home', function () {
@@ -28,7 +28,7 @@ Route::middleware(LoginMiddleware::class)->group(function () {
 
     Route::put('/posts/update', [PostController::class, 'update'])->name('posts.update');
 
-    Route::put('/posts/analyze', [PostController::class, 'analyze'])->name('posts.analyze');
+    Route::post('/concerns/analyze', [PostController::class, 'analyze'])->name('posts.analyze');
 
     Route::post('/posts/save-progress', [PostController::class, 'saveProgress'])->name('posts.saveProgress');
 
