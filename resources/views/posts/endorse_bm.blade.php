@@ -43,7 +43,11 @@
                     <td>
                         @foreach($branches as $branch)
                             @if($posts->branch == $branch['id'])
+                            @php
+                        $branch_name = $branch['branch_name'];
+                        @endphp
                                 {{ $branch['branch_name'] }}
+
                             @endif
                         @endforeach
                     </td>
@@ -75,15 +79,14 @@
                     <td>{{ $posts->assess ?? 'N/A' }}</td>
                     @endif
                     <td>
-                        @if($authenticatedUser['account_type_id'] == 7)
-                        @if($posts->status !== 'Resolved')
+                 
                         <a href="#" id="analyzeButton"
                             class="btn btn-success @if($posts->status === 'Pending') disabled @endif"
                             data-bs-toggle="modal"
                             data-bs-target="#analyzeModal"
                             data-id="{{ $posts->id }}"
                             data-name="{{ $posts->name }}"
-                            data-branch="{{ $posts->branch_name ?? 'N/A' }}"
+                            data-branch="{{ $branch_name }}"
                             data-contact="{{ $posts->contact_number }}"
                             data-message="{{ $posts->message }}"
                             data-concern="{{ $posts->concern }}"
@@ -91,8 +94,7 @@
                             
                             ANALYZE
                         </a>
-                        @endif
-                        @endif
+                      
                     </td>
                 </tr>
                 @endforeach
