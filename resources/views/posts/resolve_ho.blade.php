@@ -30,7 +30,7 @@
                     <th scope="col" class="border bg-slate-200 text-center font-poppins font-bold">RESOLVED BY</th>
                     <th scope="col" class="border bg-slate-200 text-center font-poppins font-bold">STATUS</th>
                     <th scope="col" class="border bg-slate-200 text-center font-poppins font-bold">MEMBER FEEDBACK</th>
-                    <th scope="col" class="border bg-slate-200 text-center font-poppins font-bold">ASSESSMENT</th>
+                    <th scope="col" class="border bg-slate-200 text-center font-poppins font-bold">MEMBER ASSESSMENT</th>
                     <th scope="col" class="border bg-slate-200 text-center font-poppins font-bold">ACTION</th>
                 </tr>
             </thead>
@@ -95,19 +95,23 @@
         </table>
     </div>
 </x-app-layout>
+
+
     <!-- Validate Modal -->
     <div class="modal fade" id="validateModal" tabindex="-1" aria-labelledby="validateModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <form id="validateForm" method="POST" action="{{ route('validate.concern') }}">
                     @csrf
+                    @method('post')
+
                     <div class="modal-header">
                         <h5 class="modal-title" id="validateModalLabel">Validate Concern</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <!-- Hidden Input for Concern ID -->
-                        <input type="hidden" name="id" id="validateConcernId">
+                        <input type="text" name="id" id="validateConcernId">
 
                         <!-- Name -->
                         <div class="mb-3">
@@ -141,27 +145,22 @@
                             </ul>
                         </div>
 
-                        <!-- Rate -->
+                        <!-- Assess the Task -->
                         <div class="mb-3">
-                            <label class="form-label">Assessment</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="rate" id="rateSatisfied" value="Satisfied" required>
-                                <label class="form-check-label" for="rateSatisfied">Satisfied</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="rate" id="rateUnsatisfied" value="Unsatisfied" required>
-                                <label class="form-check-label" for="rateUnsatisfied">Unsatisfied</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="rate" id="rateUnresolved" value="Unresolved" required>
-                                <label class="form-check-label" for="rateUnresolved">Unresolved</label>
-                            </div>
+                            <label for="rate" class="form-label">Assessment</label>
+                            <select class="form-select" name="assess" id="assess" required>
+                                <option value="" disabled selected>Select an option</option>
+                                <option value="Satisfied">Satisfied</option>
+                                <option value="Unsatisfied">Unsatisfied</option>
+                                <option value="Unresolved">Unresolved</option>
+                            </select>
                         </div>
+
 
                         <!-- Member Concern -->
                         <div class="mb-3">
                             <label for="memberConcern" class="form-label">Member Comments</label>
-                            <textarea class="form-control" id="memberConcern" name="member_concern" rows="3" placeholder="Provide member feedback"></textarea>
+                            <textarea class="form-control" id="memberComments" name="member_comments" rows="3" placeholder="Provide member feedback"></textarea>
                         </div>
 
 

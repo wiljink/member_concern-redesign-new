@@ -116,7 +116,7 @@ class PostController extends Controller
           $response2 = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
           $authenticatedUser = $response2->json();
       
-          $posts = Post::whereIn('status', ['Endorsed', 'In progress'])->paginate(10);
+          $posts = Post::whereIn('status', ['Endorsed', 'In progress', ])->OrWhere('assess','unresolved')->paginate(10);
 
           
 
@@ -260,170 +260,27 @@ class PostController extends Controller
     }
     
     
-    public function resolved()
+
+
+    public function validateConcern(Request $request)
     {
-        // Fetch branch data from the API
-        $response1 = Http::get('https://loantracker.oicapp.com/api/v1/branches');
-        $branches = $response1->json(); // This will hold the branch data
-
-        // Fetch authenticated user's information
-        $token = session('token');
-        $response2 = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
-        $authenticatedUser = $response2->json();
-
-        // Check if branch_id is 23 (admin or specific branch condition)
-        if ($authenticatedUser['user']['branch_id'] === 23) {
-            // If the branch is 23, fetch all posts, filtered by resolved_by to match the authenticated user
-            $posts = Post::whereNotNull('created_at')
-                ->whereNotNull('endorsed_date')
-                ->where('status', 'Resolved')
-                ->where('resolved_by', $authenticatedUser['user']['id']) // Filter by resolved_by
-                ->get();
-        } else {
-            // Otherwise, fetch posts only for the authenticated user's branch and resolved by the user
-            $posts = Post::whereNotNull('created_at')
-                ->whereNotNull('endorsed_date')
-                ->where('status', 'Resolved')
-                ->where('branch', $authenticatedUser['user']['branch_id']) // Filter by branch
-                ->where('resolved_by', $authenticatedUser['user']['id']) // Filter by resolved_by
-                ->get();
-        }
-
-        // Group posts by branch
-        $groupedPosts = $posts->groupBy('branch');
-
-        // Initialize an array to hold average facilitation times for each branch and concern
-        $averagesByBranch = [];
-
-        // Loop through each branch
-        foreach ($groupedPosts as $branch => $branchPosts) {
-            // Fetch the branch name from the branch data using the branch_id
-            $branchName = collect($branches['branches'])->firstWhere('id', $authenticatedUser['user']['branch_id'])['branch_name'] ?? 'Unknown Branch';
-
-            // Group posts by concern within the branch
-            $postsByConcern = $branchPosts->groupBy('concern');
-
-            foreach ($postsByConcern as $concern => $concernPosts) {
-                // Exclude posts with null or empty concern
-                if (empty($concern)) {
-                    continue;
-                }
-
-                $totalSeconds = 0;
-                $totalPosts = count($concernPosts);
-
-                foreach ($concernPosts as $post) {
-                    // Calculate the difference in seconds between concern_received_date and endorsed_date
-                    $receivedDate = \Carbon\Carbon::parse($post->concern_received_date);
-                    $endorsedDate = \Carbon\Carbon::parse($post->endorsed_date);
-
-                    $diffInSeconds = $endorsedDate->diffInSeconds($receivedDate);
-
-                    $totalSeconds += $diffInSeconds;
-                }
-
-                // Calculate the average time in seconds for this concern
-                if ($totalPosts > 0) {
-                    $averageSeconds = $totalSeconds / $totalPosts;
-
-                    // Convert seconds into days, hours, minutes, and seconds
-                    $averageDays = floor($averageSeconds / 86400);
-                    $averageSeconds %= 86400;
-                    $averageHours = floor($averageSeconds / 3600);
-                    $averageSeconds %= 3600;
-                    $averageMinutes = floor($averageSeconds / 60);
-                    $averageSeconds %= 60;
-
-                    // Store the average facilitation time for the concern
-                    $averagesByBranch[$branch]['branch_name'] = $branchName; // Store branch name
-                    $averagesByBranch[$branch][$concern] = [
-                        'days' => $averageDays,
-                        'hours' => $averageHours,
-                        'minutes' => $averageMinutes,
-                        'seconds' => $averageSeconds
-                    ];
-                }
-            }
-        }
-
-        // Return the view with both averagesByBranch and posts data
-        return view('posts.resolved', compact('averagesByBranch', 'posts', 'branches'));
-    }
-
-    // public function facilitate()
-    // {
-    //     // Retrieve all concerns with a valid concern_received_date and endorsed_date
-    //     $posts = Post::whereNotNull('created_at')
-    //         ->whereNotNull('endorsed_date')
-    //         ->get();
-
-    //     // Group posts by branch
-    //     $groupedPosts = $posts->groupBy('branch');
-
-    //     // Initialize an array to hold average facilitation times for each branch and concern
-    //     $averagesByBranch = [];
-
-    //     // Loop through each branch
-    //     foreach ($groupedPosts as $branch => $branchPosts) {
-    //         // Group posts by concern within the branch
-    //         $postsByConcern = $branchPosts->groupBy('concern');
-
-    //         foreach ($postsByConcern as $concern => $concernPosts) {
-    //             $totalSeconds = 0;
-    //             $totalPosts = count($concernPosts);
-
-    //             foreach ($concernPosts as $post) {
-    //                 // Calculate the difference in seconds between concern_received_date and endorsed_date
-    //                 $receivedDate = \Carbon\Carbon::parse($post->concern_received_date);
-    //                 $endorsedDate = \Carbon\Carbon::parse($post->endorsed_date);
-
-    //                 $diffInSeconds = $endorsedDate->diffInSeconds($receivedDate);
-
-    //                 $totalSeconds += $diffInSeconds;
-    //             }
-
-    //             // Calculate the average time in seconds for this concern
-    //             $averageSeconds = $totalSeconds / $totalPosts;
-
-    //             // Convert seconds into days, hours, minutes, and seconds
-    //             $averageDays = floor($averageSeconds / 86400);
-    //             $averageSeconds %= 86400;
-    //             $averageHours = floor($averageSeconds / 3600);
-    //             $averageSeconds %= 3600;
-    //             $averageMinutes = floor($averageSeconds / 60);
-    //             $averageSeconds %= 60;
-
-    //             // Store the average facilitation time
-    //             $averagesByBranch[$branch][$concern] = [
-    //                 'days' => $averageDays,
-    //                 'hours' => $averageHours,
-    //                 'minutes' => $averageMinutes,
-    //                 'seconds' => $averageSeconds
-    //             ];
-    //         }
-    //     }
-
-    //     // Pass the data to the view
-    //     return view('posts.resolved', compact('averagesByBranch'));
-    // }
-
-
-public function validateConcern(Request $request)
-{
-    // Retrieve tasks as a single string from the textarea
-    $tasksString = $request->input('tasks');
+        // Validate the inputs
+        $validatedData = $request->validate([
+            'id' => 'required|exists:posts,id', // Ensure the ID exists
+            'assess' => 'required|string',
+            'member_comments' => 'nullable|string|max:500', // Use the correct field name
+        ]);
     
-    // Split the string into an array of tasks
-    $tasks = array_map('trim', explode(',', $tasksString));
-
-    // Process the tasks (e.g., save to the database or display on a view)
-    foreach ($tasks as $task) {
-        // Save or handle each task
-        Task::create(['description' => $task]); // Example saving
-    }
-
-    return back()->with('success', 'Tasks have been processed successfully.');
-}
-
-
+        // Retrieve the existing post by ID
+        $post = Post::findOrFail($validatedData['id']);
+    
+        // Update only the 'assess' and 'member_comments' fields
+        $post->update([
+            'assess' => $validatedData['assess'],
+            'member_comments' => $validatedData['member_comments'],
+        ]);
+    
+        return back()->with('success', 'Member Feedback has been submitted successfully.');
+    }    
+    
 }

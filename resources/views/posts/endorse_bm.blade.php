@@ -29,6 +29,8 @@
                     <th scope="col" class="border bg-slate-200 text-center font-poppins font-bold">DATE RESOLVED</th>
                     <th scope="col" class="border bg-slate-200 text-center font-poppins font-bold">RESOLVED BY</th>
                     <th scope="col" class="border bg-slate-200 text-center font-poppins font-bold">STATUS</th>
+                    <th scope="col" class="border bg-slate-200 text-center font-poppins font-bold">MEMBER FEEDBACK</th>
+                    <th scope="col" class="border bg-slate-200 text-center font-poppins font-bold">MEMBER ASSESSMENT</th>
                     @endif
                     <th scope="col" class="border bg-slate-200 text-center font-poppins font-bold">ACTION</th>
                 </tr>
@@ -69,6 +71,8 @@
                     <td>{{ $posts->resolved_date ?? 'N/A' }}</td>
                     <td>{{ $posts->resolve_by ?? 'N/A' }}</td>
                     <td>{{ $posts->status ?? 'Pending' }}</td>
+                    <td>{{ $posts->member_comments ?? 'N/A' }}</td>
+                    <td>{{ $posts->assess ?? 'N/A' }}</td>
                     @endif
                     <td>
                         @if($authenticatedUser['account_type_id'] == 7)
