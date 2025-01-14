@@ -86,7 +86,9 @@
                             data-branch="{{ $posts->branch_name ?? 'N/A' }}"
                             data-contact="{{ $posts->contact_number }}"
                             data-message="{{ $posts->message }}"
+                            data-concern="{{ $posts->concern }}"
                             data-tasks='{{ json_encode($tasks) }}'>
+                            
                             ANALYZE
                         </a>
                         @endif
@@ -140,6 +142,12 @@
                         <input type="text" class="form-control" name="contact_number" id="analyzeContact" readonly>
                     </div>
 
+                     <!-- Concern -->
+                     <div class="mb-3">
+                            <label for="analyzeConcern" class="form-label">Concern</label>
+                            <input type="text" class="form-control" id="analyzeConcern" name="concern" readonly>
+                        </div>
+
                     <div class="mb-3">
                         <label for="analyzeMessage" class="form-label">Message</label>
                         <textarea class="form-control" name="message" id="analyzeMessage" rows="3" readonly></textarea>
@@ -183,6 +191,7 @@ $(document).ready(function () {
         const postName = $(this).data('name');
         const postBranchName = $(this).data('branch');
         const postContact = $(this).data('contact');
+        const postConcern = $(this).data('concern');
         const postMessage = $(this).data('message');
         const existingTasks = $(this).data('tasks') || [];
 
@@ -192,6 +201,7 @@ $(document).ready(function () {
         $('#analyzePostName').val(postName);
         $('#analyzeBranch').val(postBranchName || '');
         $('#analyzeContact').val(postContact || '');
+        $('#analyzeConcern').val(postConcern || '');
         $('#analyzeMessage').val(postMessage || '');
 
         const tasksContainer = $('#tasksContainer');

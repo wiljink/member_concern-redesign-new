@@ -160,9 +160,11 @@ class PostController extends Controller
                 'status' => 'required|string|in:Resolved,In Progress',
             ]);
 
+           
+
             // Find the post by ID
             $post = Post::findOrFail($validatedData['posts_id']);
-
+            
             // Decode existing tasks
             $existingTasks = $post->tasks ? json_decode($post->tasks, true) : [];
 
@@ -270,6 +272,8 @@ class PostController extends Controller
             'assess' => 'required|string',
             'member_comments' => 'nullable|string|max:500', // Use the correct field name
         ]);
+        $response1 = Http::get('https://loantracker.oicapp.com/api/v1/branches');
+        $branches = $response1->json();
     
         // Retrieve the existing post by ID
         $post = Post::findOrFail($validatedData['id']);
@@ -280,7 +284,7 @@ class PostController extends Controller
             'member_comments' => $validatedData['member_comments'],
         ]);
     
-        return back()->with('success', 'Member Feedback has been submitted successfully.');
+        return back()->with('success', 'Member Feedback has been validated successfully.');
     }    
     
 }

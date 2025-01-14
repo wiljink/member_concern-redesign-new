@@ -83,7 +83,8 @@
                                data-name="{{ $posts->name }}"
                                data-branch="{{ $branch['branch_name'] }}"
                                data-contact="{{ $posts->contact_number }}"
-                               data-message="{{ $posts->message }}">
+                               data-message="{{ $posts->message }}"
+                               data-concern="{{ $posts->concern ?? 'No concern available' }}">
                                 VALIDATE
                             </a>
                         @endif
@@ -111,7 +112,7 @@
                     </div>
                     <div class="modal-body">
                         <!-- Hidden Input for Concern ID -->
-                        <input type="text" name="id" id="validateConcernId">
+                        <input type="hidden" name="id" id="validateConcernId">
 
                         <!-- Name -->
                         <div class="mb-3">
