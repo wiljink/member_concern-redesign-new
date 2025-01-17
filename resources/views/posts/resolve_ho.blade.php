@@ -40,9 +40,13 @@
                     <td>{{ $posts->id }}</td>
                     <td>{{ $posts->name }}</td>
                     <td>
-                        @foreach($branches as $branch)
+                    @foreach($branches as $branch)
                             @if($posts->branch == $branch['id'])
+                            @php
+                        $branch_name = $branch['branch_name'];
+                        @endphp
                                 {{ $branch['branch_name'] }}
+
                             @endif
                         @endforeach
                     </td>
@@ -81,10 +85,13 @@
                                data-bs-target="#validateModal"
                                data-id="{{ $posts->id }}"
                                data-name="{{ $posts->name }}"
-                               data-branch="{{ $branch['branch_name'] }}"
+                               data-branch="{{ $branch_name }}"
                                data-contact="{{ $posts->contact_number }}"
                                data-message="{{ $posts->message }}"
-                               data-concern="{{ $posts->concern ?? 'No concern available' }}">
+                               data-concern="{{ $posts->concern ?? 'No concern available' }}"
+                               data-assess="{{ $posts->assess }}"
+                               data-member-comments="{{ $posts->member_comments }}"
+                               data-tasks='{{ json_encode($tasks) }}'>
                                 VALIDATE
                             </a>
                         @endif
@@ -140,10 +147,8 @@
 
                         <!-- Task -->
                         <div class="mb-3">
-                            <label for="validateTask" class="form-label">Action for the said concern</label>
-                            <ul id="validateTask" class="list-group">
-
-                            </ul>
+                            <label for="validateTask" class="form-label">Tasks for the said concern</label>
+                            <textarea id="validateTask" name="tasks" class="form-control" rows="5" readonly></textarea>
                         </div>
 
                         <!-- Assess the Task -->
@@ -151,9 +156,9 @@
                             <label for="rate" class="form-label">Assessment</label>
                             <select class="form-select" name="assess" id="assess" required>
                                 <option value="" disabled selected>Select an option</option>
-                                <option value="Satisfied">Satisfied</option>
-                                <option value="Unsatisfied">Unsatisfied</option>
-                                <option value="Unresolved">Unresolved</option>
+                                <option value="satisfied">Satisfied</option>
+                                <option value="unsatisfied">Unsatisfied</option>
+                                <option value="unresolved">Unresolved</option>
                             </select>
                         </div>
 
@@ -173,40 +178,65 @@
             </div>
         </div>
     </div>
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const validateModal = document.getElementById('validateModal');
+    document.addEventListener('DOMContentLoaded', () => {
+        const validateModal = document.getElementById('validateModal');
+        const validateButtons = document.querySelectorAll('#validateButton');
 
-            validateModal.addEventListener('show.bs.modal', function(event) {
-                const button = event.relatedTarget; // Button that triggered the modal
+        validateModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget; // Button that triggered the modal
 
-                // Extract data from data-* attributes
-                const concernId = button.getAttribute('data-id');
-                const name = button.getAttribute('data-name');
-                const branch = button.getAttribute('data-branch');
-                const concern = button.getAttribute('data-concern');
-                const message = button.getAttribute('data-message');
-                const tasks = JSON.parse(button.getAttribute('data-tasks')) || [];
+            // Extract data from data-* attributes
+            const concernId = button.getAttribute('data-id');
+            const name = button.getAttribute('data-name');
+            const branch = button.getAttribute('data-branch');
+            const concern = button.getAttribute('data-concern');
+            const message = button.getAttribute('data-message');
+            const tasks = JSON.parse(button.getAttribute('data-tasks')) || [];
+            const assess = button.getAttribute('data-assess') || ''; // New field for assessment
+            // Create an alert with the value
+            // alert(`Assessment: ${assess}`);
+            const memberComments = button.getAttribute('data-member-comments') || ''; // New field for member comments
 
-                // Populate modal fields
-                document.getElementById('validateConcernId').value = concernId;
-                document.getElementById('validateName').value = name;
-                document.getElementById('validateBranch').value = branch;
-                document.getElementById('validateConcern').value = concern;
-                document.getElementById('validateMessage').value = message;
+            // Populate modal fields
+            document.getElementById('validateConcernId').value = concernId;
+            document.getElementById('validateName').value = name;
+            document.getElementById('validateBranch').value = branch;
+            document.getElementById('validateConcern').value = concern;
+            document.getElementById('validateMessage').value = message;
 
-                const taskList = document.getElementById('validateTask');
-                taskList.innerHTML = ''; // Clear existing tasks
+            // Set assessment value
+            document.getElementById('assess').value = assess;
 
-                tasks.forEach(task => {
-                    const listItem = document.createElement('li');
-                    listItem.textContent = task;
-                    listItem.classList.add('list-group-item');
-                    taskList.appendChild(listItem);
-                });
+            // Set member comments value
+            document.getElementById('memberComments').value = memberComments;
+
+            const taskList = document.getElementById('validateTask');
+            taskList.innerHTML = ''; // Clear existing tasks
+
+            tasks.forEach(task => {
+                const listItem = document.createElement('li');
+                listItem.textContent = task;
+                listItem.classList.add('list-group-item');
+                taskList.appendChild(listItem);
             });
         });
-    </script>
+
+        validateButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Get tasks from the button's data-tasks attribute
+                const tasks = JSON.parse(this.getAttribute('data-tasks'));
+                const taskTextarea = document.getElementById('validateTask');
+
+                // Populate the textarea with tasks, separated by line breaks
+                taskTextarea.value = tasks.join('\n');
+            });
+        });
+    });
+</script>
+
+
 </div>
 
 

@@ -76,7 +76,10 @@
                     <td>{{ $posts->resolve_by ?? 'N/A' }}</td>
                     <td>{{ $posts->status ?? 'Pending' }}</td>
                     <td>{{ $posts->member_comments ?? 'N/A' }}</td>
-                    <td>{{ $posts->assess ?? 'N/A' }}</td>
+                    <td class="{{ $posts->assess === 'Unresolved' ? 'text-red' : '' }}">
+                        {{ $posts->assess ?? 'N/A' }}
+                    </td>
+
                     @endif
                     <td>
                  
@@ -135,7 +138,7 @@
                     <!-- Display Branch -->
                     <div class="mb-3">
                         <label for="analyzeBranch" class="form-label">Branch</label>
-                        <input type="text" class="form-control" name="branch_name" id="analyzeBranch" readonly>
+                        <input type="text" class="form-control" name="branch" id="analyzeBranch" readonly>
                     </div>
 
                     <!-- Display Contact Number -->

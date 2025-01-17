@@ -261,30 +261,75 @@ class PostController extends Controller
         ]);
     }
     
-    
-
-
     public function validateConcern(Request $request)
     {
-        // Validate the inputs
+        // Validate inputs
         $validatedData = $request->validate([
-            'id' => 'required|exists:posts,id', // Ensure the ID exists
+            'id' => 'required|exists:posts,id', 
             'assess' => 'required|string',
-            'member_comments' => 'nullable|string|max:500', // Use the correct field name
+            'member_comments' => 'nullable|string|max:500',
         ]);
-        $response1 = Http::get('https://loantracker.oicapp.com/api/v1/branches');
-        $branches = $response1->json();
     
-        // Retrieve the existing post by ID
+        // Retrieve the post by ID
         $post = Post::findOrFail($validatedData['id']);
     
-        // Update only the 'assess' and 'member_comments' fields
+        // Update the assess and member_comments fields
         $post->update([
             'assess' => $validatedData['assess'],
             'member_comments' => $validatedData['member_comments'],
         ]);
     
-        return back()->with('success', 'Member Feedback has been validated successfully.');
-    }    
+        // Archive the post if the assess value is 'Satisfied' or 'Unsatisfied'
+        if (in_array($validatedData['assess'], ['Satisfied', 'Unsatisfied'])) {
+            $post->update([
+                'status' => 'Archived',
+                'archived_at' => now(),
+            ]);
+        }
     
+        // Return success response
+        return back()->with('success', 'Member Feedback has been validated and archived successfully.');
+    }
+
+    // newly added code
+    public function getStatusOverview(Request $request)
+    {
+       // Fetch the authenticated user's data from the external API
+    $token = session('token');
+    $response2 = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
+    
+    if ($response2->failed()) {
+        return response()->json(['error' => 'Unable to fetch user data'], 500);
+    }
+
+    $authenticatedUser = $response2->json();
+
+    if (!isset($authenticatedUser['user'])) {
+        return response()->json(['error' => 'User data is missing'], 400);
+    }
+
+    $branchId = $authenticatedUser['user']['branch_id'] ?? null;
+    $accountTypeId = $authenticatedUser['user']['account_type_id'] ?? null;
+
+    if (!$branchId || !$accountTypeId) {
+        return response()->json(['error' => 'Branch ID or Account Type ID is missing'], 400);
+    }
+
+        // Query the database to get counts based on the status
+        $statusCounts = DB::table('posts') // Replace 'posts' with the actual table name
+        ->select('status', DB::raw('COUNT(*) as count'), DB::raw('MAX(updated_at) as last_updated'))
+        ->when($branchId == 23, function ($query) {
+            $query->whereIn('status', ['Pending', 'Validate']);
+        })
+        ->when($accountTypeId == 7, function ($query) {
+            $query->orWhereIn('status', ['Resolved']);
+        })
+        ->orWhere('status', 'Endorsed')
+        ->orWhere('status', 'Unresolved')
+        ->groupBy('status')
+        ->get();
+
+    return response()->json($statusCounts);
+    }
+           
 }

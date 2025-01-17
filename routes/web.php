@@ -32,6 +32,9 @@ Route::middleware(LoginMiddleware::class)->group(function () {
 
     Route::post('/posts/save-progress', [PostController::class, 'saveProgress'])->name('posts.saveProgress');
 
+    //newly added code 01162025
+    Route::get('/status-overview', [PostController::class, 'getStatusOverview'])->name('status.overview');
+
 
     Route::prefix('/concerns')->name('concerns.')->group(function(){
 
