@@ -51,7 +51,15 @@
                     <td>{{ $posts->concern }}</td>
                     <td>{{ $posts->message }}</td>
                     @if($authenticatedUser['account_type_id'] == 7)
-                    <td>{{ $posts->endorse_by_fullname ?? 'N/A' }}</td>
+                    @php
+                    $token = session('token');
+                    $endorse_by = $posts->endorse_by;
+                    $api_link = "https://loantracker.oicapp.com/api/v1/users/" . $endorse_by;
+                    $response3 = Http::withToken($token)->get($api_link);
+                    $user = $response3->json();
+                
+                    @endphp
+                    <td>{{ $user['user']['officer']['fullname'] }}</td>
                     <td class="expanded-column">
                         @php
                         $tasks = json_decode($posts->tasks, true);
