@@ -115,9 +115,19 @@ class PostController extends Controller
           $token = session('token');
           $response2 = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
           $authenticatedUser = $response2->json();
-      
-          $posts = Post::whereIn('status', ['Endorsed', 'In progress', ])->OrWhere('assess','unresolved')->paginate(10);
+        //dd($authenticatedUser);
+        // Check if the user data was fetched successfully
+        if (!isset($authenticatedUser['user'])) {
+        return redirect()->back()->with('error', 'Unable to fetch authenticated user details.');
+        }
 
+         $userId = $authenticatedUser['user']['id']; // Replace 'id' with the actual key for the user's ID from the response
+
+        // Query to get concerns endorsed to the logged user
+         $posts = Post::where('endorse_to', $userId) // Filter by the logged-in user's ID
+            ->whereIn('status', ['Endorsed', 'In progress'])
+            ->orWhere('assess', 'unresolved')
+            ->paginate(10);
           
 
         return view('posts.endorse_bm', [
@@ -137,8 +147,12 @@ class PostController extends Controller
           $token = session('token');
           $response2 = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
           $authenticatedUser = $response2->json();
-      
-          $posts = Post::where('status', 'Resolved')->paginate(10);
+
+          $userId = $authenticatedUser['user']['id']; 
+
+          $posts = Post::where('status', 'Resolved')
+            ->where('endorse_to', $userId)
+            ->paginate(10);
 
         return view('posts.resolve_bm', [
             'data' => $posts,
