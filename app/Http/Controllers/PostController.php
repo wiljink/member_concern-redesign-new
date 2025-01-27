@@ -100,9 +100,6 @@ class PostController extends Controller
         ]);
     }
     
-
- 
-
     public function endorsebm()
     {
         
@@ -115,6 +112,7 @@ class PostController extends Controller
           $token = session('token');
           $response2 = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
           $authenticatedUser = $response2->json();
+
         //dd($authenticatedUser);
         // Check if the user data was fetched successfully
         if (!isset($authenticatedUser['user'])) {
