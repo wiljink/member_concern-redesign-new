@@ -274,34 +274,55 @@ class PostController extends Controller
     }
     
     public function validateConcern(Request $request)
-    {
-        // Validate inputs
-        $validatedData = $request->validate([
-            'id' => 'required|exists:posts,id', 
-            'assess' => 'required|string',
-            'member_comments' => 'nullable|string|max:500',
-        ]);
-    
-        // Retrieve the post by ID
-        $post = Post::findOrFail($validatedData['id']);
-    
-        // Update the assess and member_comments fields
+{
+    // Validate inputs
+    $validatedData = $request->validate([
+        'id' => 'required|exists:posts,id', 
+        'assess' => 'required|string|in:satisfied,unsatisfied,unresolved',
+        'member_comments' => 'nullable|string|max:500',
+    ]);
+
+    // Retrieve the post by ID
+    $post = Post::findOrFail($validatedData['id']);
+
+    // Update the assess and member_comments fields
+    $post->update([
+        'assess' => $validatedData['assess'],
+        'member_comments' => $validatedData['member_comments'],
+    ]);
+
+    // Handle based on assess value
+    if (in_array($validatedData['assess'], ['satisfied', 'unsatisfied'])) {
+        // Archive the concern
         $post->update([
-            'assess' => $validatedData['assess'],
-            'member_comments' => $validatedData['member_comments'],
+            'status' => 'Archived',
+            'archived_at' => now(),
         ]);
-    
-        // Archive the post if the assess value is 'Satisfied' or 'Unsatisfied'
-        if (in_array($validatedData['assess'], ['Satisfied', 'Unsatisfied'])) {
-            $post->update([
-                'status' => 'Archived',
-                'archived_at' => now(),
-            ]);
+    } elseif ($validatedData['assess'] === 'unresolved') {
+        // Return to the manager who resolved the concern
+        if ($post->resolve_by) {
+            $manager = User::find($post->resolve_by); // Assuming User model holds managers
+
+            if ($manager) {
+                // Update status to indicate reassignment
+                $post->update([
+                    'status' => 'Reassigned',
+                ]);
+
+                // Log the reassignment for tracking
+                \Log::info('Concern reassigned to the manager who resolved it', [
+                    'post_id' => $post->id,
+                    'manager_id' => $manager->id,
+                    'manager_name' => $manager->name,
+                ]);
+            }
         }
-    
-        // Return success response
-        return back()->with('success', 'Member Feedback has been validated and archived successfully.');
     }
+
+    // Return success response
+    return back()->with('success', 'Concern has been validated and archived successfully.');
+}
+
 
     // newly added code
     public function getStatusOverview(Request $request)
