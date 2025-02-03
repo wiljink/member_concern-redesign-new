@@ -42,6 +42,8 @@ Route::middleware(LoginMiddleware::class)->group(function () {
         Route::get('/resolvebm', [PostController::class, 'resolvebm'])->name('resolvebm');
         Route::get('/endorsebm', [PostController::class, 'endorsebm'])->name('endorsebm');
         Route::get('/resolveho', [PostController::class, 'resolveho'])->name('resolveho');
+        Route::get('/reportho',[PostController::class, 'reportho'])->name('reportho');
+        Route::get('/reportbm',[PostController::class, 'reportbm'])->name('reportbm');
     });
 
 
@@ -51,7 +53,6 @@ Route::middleware(LoginMiddleware::class)->group(function () {
 
     // Route to handle validation of a concern
     Route::post('/concerns/validate', [PostController::class, 'validateConcern'])->name('validate.concern');
-
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
@@ -73,4 +74,4 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// require __DIR__ . '/auth.php';
+

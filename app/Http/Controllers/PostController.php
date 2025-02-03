@@ -264,7 +264,8 @@ class PostController extends Controller
           $response2 = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
           $authenticatedUser = $response2->json();
       
-          $posts = Post::where('status', 'Resolved')->paginate(10);
+           // Fetch posts with both "Resolved" and "Archived" status
+            $posts = Post::whereIn('status', ['Resolved'])->paginate(10);
 
         return view('posts.resolve_ho', [
             'data' => $posts,
@@ -322,6 +323,17 @@ class PostController extends Controller
     // Return success response
     return back()->with('success', 'Concern has been validated and archived successfully.');
 }
+    public function reportho()
+    {
+        return view('posts.headoffice.report_ho');
+    
+    }
+
+    public function reportbm()
+    {
+        return view('posts.bm.report_bm');
+    
+    }
 
 
     // newly added code

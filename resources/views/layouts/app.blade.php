@@ -51,6 +51,9 @@
                         <li>
                             <a href="{{ route('concerns.resolvebm') }}" class="block px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">Resolved Concern</a>
                         </li>
+                        <li>
+                            <a href="{{ route('concerns.reportbm') }}" class="block px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">Reports</a>
+                        </li>
                     @else
                         <li>
                             <a href="{{ route('concerns.list') }}" class="block px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">Member Concern</a>
@@ -58,10 +61,15 @@
                         <li>
                             <a href="{{ route('concerns.resolveho') }}" class="block px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">Validate Concern</a>
                         </li>
-                    @endif
-                    <li>
-                        <a href="#" class="block px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">Reports</a>
+                        <li>
+                        <a href="{{ route('concerns.reportho') }}" class="block px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">Reports</a>
                     </li>
+                    @endif
+
+                    
+                  
+                    
+
                     <li aria-labelledby="dropdownNavbarLink" x-data="{ open: false }" class="relative">
                         <button x-on:click="open = !open" id="doubleDropdownButton" type="button" 
                             class="flex items-center justify-between">
