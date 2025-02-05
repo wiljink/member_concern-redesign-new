@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\GuestMiddleware;
 use App\Http\Middleware\LoginMiddleware;
@@ -44,6 +45,8 @@ Route::middleware(LoginMiddleware::class)->group(function () {
         Route::get('/resolveho', [PostController::class, 'resolveho'])->name('resolveho');
         Route::get('/reportho',[PostController::class, 'reportho'])->name('reportho');
         Route::get('/reportbm',[PostController::class, 'reportbm'])->name('reportbm');
+        Route::get('/download/report/{type}', [PostController::class, 'download'])->name('download.report');
+
     });
 
 

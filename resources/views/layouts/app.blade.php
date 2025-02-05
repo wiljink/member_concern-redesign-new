@@ -66,10 +66,6 @@
                     </li>
                     @endif
 
-                    
-                  
-                    
-
                     <li aria-labelledby="dropdownNavbarLink" x-data="{ open: false }" class="relative">
                         <button x-on:click="open = !open" id="doubleDropdownButton" type="button" 
                             class="flex items-center justify-between">

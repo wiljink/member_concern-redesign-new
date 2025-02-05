@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\PostExport;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
 use Carbon\Carbon;
@@ -9,6 +10,8 @@ use Illuminate\Container\Attributes\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log as FacadesLog;
+use Illuminate\Support\facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PostController extends Controller
 {
@@ -54,20 +57,20 @@ class PostController extends Controller
         $token = session('token');
         $req = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
         $user = $req->json();
-        
+
         $post_id = $request->post_id;
         $endorse_to = $request->endorse_to;
 
         $branch_request = Http::get('https://loantracker.oicapp.com/api/v1/branches');
         $branches_json = $branch_request->json();
         $branches = $branches_json['branches'];
-        foreach($branches as $branch){
-            if($endorse_to == $branch['id']){
+        foreach ($branches as $branch) {
+            if ($endorse_to == $branch['id']) {
                 $endorse_to = $branch['branch_manager']['id'];
             }
         }
-        
-       $endorse_by = $user['user']['oid'];
+
+        $endorse_by = $user['user']['oid'];
         $post = Post::find($post_id);
         $post->endorse_by = $endorse_by;
         $post->endorse_to = $endorse_to;
@@ -84,14 +87,14 @@ class PostController extends Controller
         // Fetch branch data from the external API
         $response1 = Http::get('https://loantracker.oicapp.com/api/v1/branches');
         $branches = $response1->json();
-    
+
         // Get the authenticated user's data
         $token = session('token');
         $response2 = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
         $authenticatedUser = $response2->json();
-    
+
         $posts = Post::where('status', 'pending')->orWhere('status', 'Endorsed')->paginate(10);
-    
+
         // Return the view with the posts and other data
         return view('posts.member_concern', [
             'data' => $posts,
@@ -99,34 +102,34 @@ class PostController extends Controller
             'authenticatedUser' => $authenticatedUser['user'],
         ]);
     }
-    
+
     public function endorsebm()
     {
-        
-        
-          // Fetch branch data from the external API
-          $response1 = Http::get('https://loantracker.oicapp.com/api/v1/branches');
-          $branches = $response1->json();
 
-          // Get the authenticated user's data
-          $token = session('token');
-          $response2 = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
-          $authenticatedUser = $response2->json();
+
+        // Fetch branch data from the external API
+        $response1 = Http::get('https://loantracker.oicapp.com/api/v1/branches');
+        $branches = $response1->json();
+
+        // Get the authenticated user's data
+        $token = session('token');
+        $response2 = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
+        $authenticatedUser = $response2->json();
 
         //dd($authenticatedUser);
         // Check if the user data was fetched successfully
         if (!isset($authenticatedUser['user'])) {
-        return redirect()->back()->with('error', 'Unable to fetch authenticated user details.');
+            return redirect()->back()->with('error', 'Unable to fetch authenticated user details.');
         }
 
-         $userId = $authenticatedUser['user']['id']; // Replace 'id' with the actual key for the user's ID from the response
+        $userId = $authenticatedUser['user']['id']; // Replace 'id' with the actual key for the user's ID from the response
 
         // Query to get concerns endorsed to the logged user
-         $posts = Post::where('endorse_to', $userId) // Filter by the logged-in user's ID
+        $posts = Post::where('endorse_to', $userId) // Filter by the logged-in user's ID
             ->whereIn('status', ['Endorsed', 'In progress'])
             ->orWhere('assess', 'unresolved')
             ->paginate(10);
-          
+
 
         return view('posts.endorse_bm', [
             'data' => $posts,
@@ -137,18 +140,18 @@ class PostController extends Controller
 
     public function resolvebm()
     {
-          // Fetch branch data from the external API
-          $response1 = Http::get('https://loantracker.oicapp.com/api/v1/branches');
-          $branches = $response1->json();
-      
-          // Get the authenticated user's data
-          $token = session('token');
-          $response2 = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
-          $authenticatedUser = $response2->json();
+        // Fetch branch data from the external API
+        $response1 = Http::get('https://loantracker.oicapp.com/api/v1/branches');
+        $branches = $response1->json();
 
-          $userId = $authenticatedUser['user']['id']; 
+        // Get the authenticated user's data
+        $token = session('token');
+        $response2 = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
+        $authenticatedUser = $response2->json();
 
-          $posts = Post::where('status', 'Resolved')
+        $userId = $authenticatedUser['user']['id'];
+
+        $posts = Post::where('status', 'Resolved')
             ->where('endorse_to', $userId)
             ->paginate(10);
 
@@ -172,11 +175,11 @@ class PostController extends Controller
                 'status' => 'required|string|in:Resolved,In Progress',
             ]);
 
-           
+
 
             // Find the post by ID
             $post = Post::findOrFail($validatedData['posts_id']);
-            
+
             // Decode existing tasks
             $existingTasks = $post->tasks ? json_decode($post->tasks, true) : [];
 
@@ -236,7 +239,6 @@ class PostController extends Controller
                 : 'Concern successfully resolved and archived.';
 
             return redirect()->route('posts.index')->with('success', $message);
-
         } catch (\Illuminate\Validation\ValidationException $e) {
             return redirect()->back()
                 ->withErrors($e->validator)
@@ -247,7 +249,7 @@ class PostController extends Controller
                 'post_id' => $request->input('posts_id'),
                 'request_data' => $request->all(),
             ]);
-             return redirect()->back()->with('error', 'An error occurred while processing your request.');
+            return redirect()->back()->with('error', 'An error occurred while processing your request.');
             // return redirect()->route('posts.index')->with('success', $message);
 
         }
@@ -255,17 +257,17 @@ class PostController extends Controller
 
     public function resolveho()
     {
-          // Fetch branch data from the external API
-          $response1 = Http::get('https://loantracker.oicapp.com/api/v1/branches');
-          $branches = $response1->json();
-      
-          // Get the authenticated user's data
-          $token = session('token');
-          $response2 = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
-          $authenticatedUser = $response2->json();
-      
-           // Fetch posts with both "Resolved" and "Archived" status
-            $posts = Post::whereIn('status', ['Resolved'])->paginate(10);
+        // Fetch branch data from the external API
+        $response1 = Http::get('https://loantracker.oicapp.com/api/v1/branches');
+        $branches = $response1->json();
+
+        // Get the authenticated user's data
+        $token = session('token');
+        $response2 = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
+        $authenticatedUser = $response2->json();
+
+        // Fetch posts with both "Resolved" and "Archived" status
+        $posts = Post::whereIn('status', ['Resolved'])->paginate(10);
 
         return view('posts.resolve_ho', [
             'data' => $posts,
@@ -273,108 +275,103 @@ class PostController extends Controller
             'authenticatedUser' => $authenticatedUser['user'],
         ]);
     }
-    
+
     public function validateConcern(Request $request)
-{
-    // Validate inputs
-    $validatedData = $request->validate([
-        'id' => 'required|exists:posts,id', 
-        'assess' => 'required|string|in:satisfied,unsatisfied,unresolved',
-        'member_comments' => 'nullable|string|max:500',
-    ]);
-
-    // Retrieve the post by ID
-    $post = Post::findOrFail($validatedData['id']);
-
-    // Update the assess and member_comments fields
-    $post->update([
-        'assess' => $validatedData['assess'],
-        'member_comments' => $validatedData['member_comments'],
-    ]);
-
-    // Handle based on assess value
-    if (in_array($validatedData['assess'], ['satisfied', 'unsatisfied'])) {
-        // Archive the concern
-        $post->update([
-            'status' => 'Archived',
-            'archived_at' => now(),
+    {
+        // Validate inputs
+        $validatedData = $request->validate([
+            'id' => 'required|exists:posts,id',
+            'assess' => 'required|string|in:satisfied,unsatisfied,unresolved',
+            'member_comments' => 'nullable|string|max:500',
         ]);
-    } elseif ($validatedData['assess'] === 'unresolved') {
-        // Return to the manager who resolved the concern
-        if ($post->resolve_by) {
-            $manager = User::find($post->resolve_by); // Assuming User model holds managers
 
-            if ($manager) {
-                // Update status to indicate reassignment
-                $post->update([
-                    'status' => 'Reassigned',
-                ]);
+        // Retrieve the post by ID
+        $post = Post::findOrFail($validatedData['id']);
 
-                // Log the reassignment for tracking
-                \Log::info('Concern reassigned to the manager who resolved it', [
-                    'post_id' => $post->id,
-                    'manager_id' => $manager->id,
-                    'manager_name' => $manager->name,
-                ]);
+        // Update the assess and member_comments fields
+        $post->update([
+            'assess' => $validatedData['assess'],
+            'member_comments' => $validatedData['member_comments'],
+        ]);
+
+        // Handle based on assess value
+        if (in_array($validatedData['assess'], ['satisfied', 'unsatisfied'])) {
+            // Archive the concern
+            $post->update([
+                'status' => 'Archived',
+                'archived_at' => now(),
+            ]);
+        } elseif ($validatedData['assess'] === 'unresolved') {
+            // Return to the manager who resolved the concern
+            if ($post->resolve_by) {
+                $manager = User::find($post->resolve_by); // Assuming User model holds managers
+
+                if ($manager) {
+                    // Update status to indicate reassignment
+                    $post->update([
+                        'status' => 'Reassigned',
+                    ]);
+
+                    // Log the reassignment for tracking
+                    \Log::info('Concern reassigned to the manager who resolved it', [
+                        'post_id' => $post->id,
+                        'manager_id' => $manager->id,
+                        'manager_name' => $manager->name,
+                    ]);
+                }
             }
         }
-    }
 
-    // Return success response
-    return back()->with('success', 'Concern has been validated and archived successfully.');
-}
+        // Return success response
+        return back()->with('success', 'Concern has been validated and archived successfully.');
+    }
     public function reportho()
     {
         return view('posts.headoffice.report_ho');
-    
     }
+
 
     public function reportbm()
     {
-        return view('posts.bm.report_bm');
-    
+        $token = session('token');
+        $response2 = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
+        $authenticatedUser = $response2->json();
+
+        if ($response2->failed()) {
+            return response()->json(['error' => 'Unable to fetch user data'], 500);
+        }
+
+        // Extract authenticated user ID
+        $userId = $authenticatedUser['user']['id'] ?? null;
+
+        if (!$userId) {
+            return response()->json(['error' => 'Invalid user data'], 500);
+        }
+
+        $loansCount = Post::where('endorse_to', $userId)
+            ->where('status', 'Archived')
+            ->where('concern', 'Loans')->count();
+
+        $depositCount = Post::where('endorse_to', $userId)
+            ->where('status', 'Archived')
+            ->where('concern', 'Deposit')->count();
+
+        $customerCount = Post::where('endorse_to', $userId)
+            ->where('status', 'Archived')
+            ->where('concern', 'Customer Service')->count();
+
+        $generalCount = Post::where('endorse_to', $userId)
+            ->where('status', 'Archived')
+            ->where('concern', 'General')->count();
+
+
+
+        return view('posts.bm.report_bm', compact('loansCount', 'depositCount', 'customerCount', 'generalCount'));
     }
-
-
-    // newly added code
-    public function getStatusOverview(Request $request)
+    public function download($type)
     {
-       // Fetch the authenticated user's data from the external API
-    $token = session('token');
-    $response2 = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
-    
-    if ($response2->failed()) {
-        return response()->json(['error' => 'Unable to fetch user data'], 500);
+       
+
+        return Excel::download(new PostExport, 'concerns.xlsx');
     }
-
-    $authenticatedUser = $response2->json();
-
-    if (!isset($authenticatedUser['user'])) {
-        return response()->json(['error' => 'User data is missing'], 400);
-    }
-
-    $branchId = $authenticatedUser['user']['branch_id'] ?? null;
-    $accountTypeId = $authenticatedUser['user']['account_type_id'] ?? null;
-
-    if (!$branchId || !$accountTypeId) {
-        return response()->json(['error' => 'Branch ID or Account Type ID is missing'], 400);
-    }
-
-        // Query the database to get counts based on the status
-        $statusCounts = DB::table('posts') // Replace 'posts' with the actual table name
-        ->select('status', DB::raw('COUNT(*) as count'), DB::raw('MAX(updated_at) as last_updated'))
-        ->when($branchId == 23, function ($query) {
-            $query->whereIn('status', ['Pending', 'Validate']);
-        })
-        ->when($accountTypeId == 7, function ($query) {
-            $query->orWhereIn('status', ['Resolved']);
-        })
-        ->orWhere('status', 'Endorsed')
-        ->orWhere('status', 'Unresolved')
-        ->groupBy('status')
-        ->get();
-
-    return response()->json($statusCounts);
-    }
-           
 }
