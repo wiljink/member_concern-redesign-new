@@ -370,8 +370,8 @@ class PostController extends Controller
     }
     public function download($type)
     {
-       
+        //dd($type);
 
-        return Excel::download(new PostExport, 'concerns.xlsx');
+        return Excel::download(new PostExport($type), 'concerns.xlsx');
     }
 }

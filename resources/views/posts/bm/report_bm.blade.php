@@ -20,7 +20,7 @@
                     <td><span class="badge bg-secondary">Archived</span></td>
                     <td>{{ $loansCount }}</td>
                     <td>
-                        <a href="{{ route('concerns.download.report', ['type' => 'loans']) }}" class="btn btn-primary btn-sm">Download</a>
+                        <a href="{{ route('concerns.download.report', ['type' => 'Loans']) }}" class="btn btn-primary btn-sm">Download</a>
                     </td>
                 </tr>
                 <tr>
@@ -29,7 +29,7 @@
                     <td><span class="badge bg-secondary">Archived</span></td>
                     <td>{{ $depositCount }}</td>
                     <td>
-                        <a href="{{ route('concerns.download.report', ['type' => 'deposit']) }}" class="btn btn-primary btn-sm">Download</a>
+                        <a href="{{ route('concerns.download.report', ['type' => 'Deposit']) }}" class="btn btn-primary btn-sm">Download</a>
                     </td>
                 </tr>
                 <tr>
@@ -38,7 +38,7 @@
                     <td><span class="badge bg-secondary">Archived</span></td>
                     <td>{{ $customerCount }}</td>
                     <td>
-                        <a href="{{ route('concerns.download.report', ['type' => 'customer_service']) }}" class="btn btn-primary btn-sm">Download</a>
+                        <a href="{{ route('concerns.download.report', ['type' => 'Customer Service']) }}" class="btn btn-primary btn-sm">Download</a>
                     </td>
                 </tr>
                 <tr>
