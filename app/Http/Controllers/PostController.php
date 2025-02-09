@@ -64,6 +64,7 @@ class PostController extends Controller
         $branch_request = Http::get('https://loantracker.oicapp.com/api/v1/branches');
         $branches_json = $branch_request->json();
         $branches = $branches_json['branches'];
+        
         foreach ($branches as $branch) {
             if ($endorse_to == $branch['id']) {
                 $endorse_to = $branch['branch_manager']['id'];
