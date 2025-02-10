@@ -43,9 +43,11 @@ Route::middleware(LoginMiddleware::class)->group(function () {
         Route::get('/resolvebm', [PostController::class, 'resolvebm'])->name('resolvebm');
         Route::get('/endorsebm', [PostController::class, 'endorsebm'])->name('endorsebm');
         Route::get('/resolveho', [PostController::class, 'resolveho'])->name('resolveho');
-        Route::get('/reportho',[PostController::class, 'reportho'])->name('reportho');
+        Route::get('/reportHeadOffice',[PostController::class, 'reportho'])->name('reportHeadOffice');
         Route::get('/reportbm',[PostController::class, 'reportbm'])->name('reportbm');
         Route::get('/download/report/{type}', [PostController::class, 'download'])->name('download.report');
+        Route::get('/download/reportho/{type}', [PostController::class, 'downloadho'])->name('download.reportho');
+
 
     });
 

@@ -64,7 +64,7 @@ class PostController extends Controller
         $branch_request = Http::get('https://loantracker.oicapp.com/api/v1/branches');
         $branches_json = $branch_request->json();
         $branches = $branches_json['branches'];
-        
+
         foreach ($branches as $branch) {
             if ($endorse_to == $branch['id']) {
                 $endorse_to = $branch['branch_manager']['id'];
@@ -326,9 +326,80 @@ class PostController extends Controller
         // Return success response
         return back()->with('success', 'Concern has been validated and archived successfully.');
     }
-    public function reportho()
+    public function reportho(Request $request)
     {
-        return view('posts.headoffice.report_ho');
+        $branchRequest = Http::get('https://loantracker.oicapp.com/api/v1/branches');
+        $branch = $branchRequest->json();
+
+        $area = request()->area;
+        
+        if ($area == null) {
+        } else {
+            
+        }
+
+        $token = session('token');
+        $response2 = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
+        $authenticatedUser = $response2->json();
+
+        if ($response2->failed()) {
+            return response()->json(['error' => 'Unable to fetch user data'], 500);
+        }
+
+        $userId = $authenticatedUser['user']['id'] ?? null;
+        if (!$userId) {
+            return response()->json(['error' => 'Invalid user data'], 500);
+        }
+
+        // Check if the request is AJAX
+        if ($request->ajax()) {
+            // Retrieve filter parameters
+            $selectedArea = $request->input('area');
+            $selectedBranch = $request->input('branch');
+
+            // Base query
+            $query = Post::where('endorse_to', $userId)
+                ->where('status', 'Archived');
+
+            // Apply filters
+            if (!empty($selectedArea) && $selectedArea !== 'all') {
+                $query->where('area', $selectedArea);
+            }
+
+            if (!empty($selectedBranch)) {
+                $query->where('branch', $selectedBranch);
+            }
+
+            // Fetch concern data with average resolution days
+            $concerns = $query->select('concern', DB::raw('AVG(resolution_days) as avg_days'))
+                ->groupBy('concern')
+                ->get();
+
+            return response()->json($concerns);
+        }
+
+        // Count concerns
+        $loansCount = Post::where('endorse_to', $userId)
+            ->where('status', 'Archived')
+            ->where('concern', 'Loans')->count();
+
+        $depositCount = Post::where('endorse_to', $userId)
+            ->where('status', 'Archived')
+            ->where('concern', 'Deposit')->count();
+
+        $customerCount = Post::where('endorse_to', $userId)
+            ->where('status', 'Archived')
+            ->where('concern', 'Customer Service')->count();
+
+        $generalCount = Post::where('endorse_to', $userId)
+            ->where('status', 'Archived')
+            ->where('concern', 'General')->count();
+
+
+
+        // Return the view if not an AJAX request
+        //return view('posts.headoffice.report_ho');
+        return view('posts.headoffice.report_ho', compact('loansCount', 'depositCount', 'customerCount', 'generalCount'));
     }
 
 
@@ -370,6 +441,12 @@ class PostController extends Controller
         return view('posts.bm.report_bm', compact('loansCount', 'depositCount', 'customerCount', 'generalCount'));
     }
     public function download($type)
+    {
+        //dd($type);
+
+        return Excel::download(new PostExport($type), 'concerns.xlsx');
+    }
+    public function downloadho($type)
     {
         //dd($type);
 
