@@ -329,13 +329,22 @@ class PostController extends Controller
     public function reportho(Request $request)
     {
         $branchRequest = Http::get('https://loantracker.oicapp.com/api/v1/branches');
-        $branch = $branchRequest->json();
+        $areas = [];
 
-        $area = request()->area;
-        
-        if ($area == null) {
-        } else {
-            
+        $branches = $branchRequest->json(); // Convert API response to an array
+        //dd($filter);
+
+        $area = request()->area; // Get the area parameter from the request
+
+        $filteredBranches = [];
+
+        if ($area != 'all' && isset($area)) {
+           
+            foreach ($branches['branches'] as $branch) {
+                if ($branch['area'] == $area) {
+                    array_push($areas, $branch['id']);
+                }
+            }
         }
 
         $token = session('token');
@@ -351,49 +360,37 @@ class PostController extends Controller
             return response()->json(['error' => 'Invalid user data'], 500);
         }
 
-        // Check if the request is AJAX
-        if ($request->ajax()) {
-            // Retrieve filter parameters
-            $selectedArea = $request->input('area');
-            $selectedBranch = $request->input('branch');
-
-            // Base query
-            $query = Post::where('endorse_to', $userId)
-                ->where('status', 'Archived');
-
-            // Apply filters
-            if (!empty($selectedArea) && $selectedArea !== 'all') {
-                $query->where('area', $selectedArea);
-            }
-
-            if (!empty($selectedBranch)) {
-                $query->where('branch', $selectedBranch);
-            }
-
-            // Fetch concern data with average resolution days
-            $concerns = $query->select('concern', DB::raw('AVG(resolution_days) as avg_days'))
-                ->groupBy('concern')
-                ->get();
-
-            return response()->json($concerns);
-        }
+        $loans =  Post::where('status', 'Archived')
+            ->where('concern', 'Loans');
 
         // Count concerns
-        $loansCount = Post::where('endorse_to', $userId)
-            ->where('status', 'Archived')
-            ->where('concern', 'Loans')->count();
+        $loansCount = empty($areas) ? $loans->count() :
+            $loans
+            ->whereIn('branch', $areas)
+            ->count();
 
-        $depositCount = Post::where('endorse_to', $userId)
-            ->where('status', 'Archived')
-            ->where('concern', 'Deposit')->count();
+        $deposit = Post::where('status', 'Archived')
+            ->where('concern', 'Deposit');
+        $depositCount =  empty($areas) ? $deposit->count() :
+            $deposit
+            ->whereIn('branch', $areas)
+            ->count();
 
-        $customerCount = Post::where('endorse_to', $userId)
-            ->where('status', 'Archived')
-            ->where('concern', 'Customer Service')->count();
 
-        $generalCount = Post::where('endorse_to', $userId)
-            ->where('status', 'Archived')
-            ->where('concern', 'General')->count();
+        $customerServ =  Post::where('status', 'Archived')
+            ->where('concern', 'Customer Service');
+        $customerCount = empty($areas) ? $customerServ->count() :
+            $customerServ
+            ->whereIn('branch', $areas)
+            ->count();
+
+
+        $general = Post::where('status', 'Archived')
+            ->where('concern', 'General');
+        $generalCount =  empty($areas) ? $general->count() :
+            $general
+            ->whereIn('branch', $areas)
+            ->count();
 
 
 

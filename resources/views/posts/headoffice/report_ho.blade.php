@@ -10,13 +10,12 @@
             <form method="get" action="{{ route('concerns.reportHeadOffice') }}">
                 <label for="areaSelect" class="form-label fw-bold">Select Area:</label>
                 <select id="areaSelect" name="area" class="form-select w-auto d-inline-block">
-                    <option value="" selected>Select Area</option>
-                    <option value="area1">Area 1</option>
-                    <option value="area2">Area 2</option>
-                    <option value="area3">Area 3</option>
-                    <option value="all">All Areas</option>
+                    <option value="all" selected>All Areas</option>
+                    <option value="1">Area 1</option>
+                    <option value="2">Area 2</option>
+                    <option value="3">Area 3</option>
                 </select>
-                <button type="submit">Generate</button>
+                <button type="submit" class="btn btn-success">Generate</button>
             </form>
         </div>
 
@@ -39,6 +38,7 @@
                     <th>ID</th>
                     <th>Concern Type</th>
                     <th>Avg. Days to Resolve</th>
+                    <th>Count</th>
                     <th>Action</th>
                 </tr>
             </thead>
