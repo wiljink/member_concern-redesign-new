@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exports\PostExport;
+use App\Exports\PostExportHO;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
 use Carbon\Carbon;
@@ -330,16 +331,17 @@ class PostController extends Controller
     {
         $branchRequest = Http::get('https://loantracker.oicapp.com/api/v1/branches');
         $areas = [];
+        
 
         $branches = $branchRequest->json(); // Convert API response to an array
-        //dd($filter);
+        
 
         $area = request()->area; // Get the area parameter from the request
-
+        
         $filteredBranches = [];
 
         if ($area != 'all' && isset($area)) {
-           
+
             foreach ($branches['branches'] as $branch) {
                 if ($branch['area'] == $area) {
                     array_push($areas, $branch['id']);
@@ -396,7 +398,7 @@ class PostController extends Controller
 
         // Return the view if not an AJAX request
         //return view('posts.headoffice.report_ho');
-        return view('posts.headoffice.report_ho', compact('loansCount', 'depositCount', 'customerCount', 'generalCount'));
+        return view('posts.headoffice.report_ho', compact('loansCount', 'depositCount', 'customerCount', 'generalCount', 'areas'));
     }
 
 
@@ -443,10 +445,9 @@ class PostController extends Controller
 
         return Excel::download(new PostExport($type), 'concerns.xlsx');
     }
-    public function downloadho($type)
+    public function downloadho($type, $area = null)
     {
-        //dd($type);
 
-        return Excel::download(new PostExport($type), 'concerns.xlsx');
+        return Excel::download(new PostExportHO($area, $type), 'concerns.xlsx');
     }
 }

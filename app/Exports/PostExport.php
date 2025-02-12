@@ -21,10 +21,8 @@ class PostExport implements FromCollection, WithHeadings
             ->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
 
         $user = $getUserResponse->json();
-        //dd()
         $this->loggedUser = $user['user']['oid'] ?? null;
 
-        //dd($this->loggedUser);
         $this->branchManager = $user['user']['fullname'] ?? null;
         $this->concern = $concern;
     }

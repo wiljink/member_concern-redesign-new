@@ -46,7 +46,7 @@ Route::middleware(LoginMiddleware::class)->group(function () {
         Route::get('/reportHeadOffice',[PostController::class, 'reportho'])->name('reportHeadOffice');
         Route::get('/reportbm',[PostController::class, 'reportbm'])->name('reportbm');
         Route::get('/download/report/{type}', [PostController::class, 'download'])->name('download.report');
-        Route::get('/download/reportho/{type}', [PostController::class, 'downloadho'])->name('download.reportho');
+        Route::get('/download/reportho/{type}/{areas?}', [PostController::class, 'downloadho'])->name('download.reportho');
 
 
     });

@@ -49,9 +49,10 @@
                     <td><span class="badge bg-secondary">Archived</span></td>
                     <td>{{ $loansCount }}</td>
                     <td>
-                        <a href="{{ route('concerns.download.reportho', ['type' => 'Loans']) }}"
+               
+                        <a href="{{ route('concerns.download.reportho', ['type' => 'Loans', 'areas' => implode(',', $areas)]) }}"
                             class="btn btn-primary btn-sm">Download</a>
-                    </td>
+                    </td> 
                 </tr>
                 <tr>
                     <td>2</td>
