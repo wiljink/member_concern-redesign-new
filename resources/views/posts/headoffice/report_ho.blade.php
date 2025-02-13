@@ -9,15 +9,19 @@
         <div class="mb-3 text-center">
             <form method="get" action="{{ route('concerns.reportHeadOffice') }}">
                 <label for="areaSelect" class="form-label fw-bold">Select Area:</label>
+
                 <select id="areaSelect" name="area" class="form-select w-auto d-inline-block">
-                    <option value="all" selected>All Areas</option>
-                    <option value="1">Area 1</option>
-                    <option value="2">Area 2</option>
-                    <option value="3">Area 3</option>
+                    <option value="all" {{ request('area') == 'all' ? 'selected' : '' }}>All Areas</option>
+                    <option value="1" {{ request('area') == '1' ? 'selected' : '' }}>Area 1</option>
+                    <option value="2" {{ request('area') == '2' ? 'selected' : '' }}>Area 2</option>
+                    <option value="3" {{ request('area') == '3' ? 'selected' : '' }}>Area 3</option>
                 </select>
+
                 <button type="submit" class="btn btn-success">Generate</button>
+                
             </form>
         </div>
+        
 
         <!-- Secondary Dropdowns for Specific Locations -->
         <div class="mb-3 text-center hidden" id="area1Dropdown">
@@ -38,7 +42,7 @@
                     <th>ID</th>
                     <th>Concern Type</th>
                     <th>Avg. Days to Resolve</th>
-                    <th>Count</th>
+                    <th>Concern Count</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -46,7 +50,7 @@
                 <tr>
                     <td>1</td>
                     <td>Loans</td>
-                    <td><span class="badge bg-secondary">Archived</span></td>
+                    <td><span class="badge bg-secondary">2</span></td>
                     <td>{{ $loansCount }}</td>
                     <td>
                
@@ -57,7 +61,7 @@
                 <tr>
                     <td>2</td>
                     <td>Deposit</td>
-                    <td><span class="badge bg-secondary">Archived</span></td>
+                    <td><span class="badge bg-secondary"> </span></td>
                     <td>{{ $depositCount }}</td>
                     <td>
                         <a href="{{ route('concerns.download.reportho', ['type' => 'Deposit']) }}"
@@ -67,7 +71,7 @@
                 <tr>
                     <td>3</td>
                     <td>Customer Service</td>
-                    <td><span class="badge bg-secondary">Archived</span></td>
+                    <td><span class="badge bg-secondary"> 1 </span></td>
                     <td>{{ $customerCount }}</td>
                     <td>
                         <a href="{{ route('concerns.download.reportho', ['type' => 'Customer Service']) }}"
@@ -77,7 +81,7 @@
                 <tr>
                     <td>4</td>
                     <td>General</td>
-                    <td><span class="badge bg-secondary">Archived</span></td>
+                    <td><span class="badge bg-secondary"> </span></td>
                     <td>{{ $generalCount }}</td>
                     <td>
                         <a href="{{ route('concerns.download.reportho', ['type' => 'general']) }}"

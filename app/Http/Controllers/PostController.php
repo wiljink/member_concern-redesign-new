@@ -28,6 +28,42 @@ class PostController extends Controller
             ]
         );
     }
+    public function dashboard(Request $request)
+    {
+        $token = session('token');
+        
+        if (!$token) {
+            return back()->with('error', 'Session token is missing.');
+        }
+    
+        // Fetch logged-in user details
+        $response = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
+        $user = $response->json();
+
+        
+        // Check if API call was successful and data exists
+        if (!$response->successful() || !isset($user['user'])) {
+            return back()->with('error', 'Failed to fetch user data.');
+        }
+    
+        // Count posts based on status
+        $posts = Post::select('status', \DB::raw('COUNT(*) as count'))
+            ->where(function ($query) use ($user) {
+                if (isset($user['user']['oid']) && $user['user']['oid'] == 23) {
+                    $query->where('oid', 23);
+                }
+              
+            })
+            ->whereIn('status', ['pending', 'Resolved', 'Endorsed']) // Filter relevant statuses
+            ->groupBy('status')
+            ->get();
+        
+        //Log::info('Fetched Posts:', $posts->toArray());
+    
+        return view('dashboard', compact('user', 'posts'));
+    }
+    
+    
 
     public function store(Request $request)
     {
@@ -221,6 +257,7 @@ class PostController extends Controller
                 $endorsedDate = Carbon::parse($post->endorsed_date);
                 $resolvedDays = $endorsedDate->diff($currentTime);
 
+                
                 $post->resolved_days = json_encode([
                     'total_difference' => $resolvedDays->format('%a days, %h hours, %i minutes, %s seconds'),
                     'days' => $resolvedDays->d,
