@@ -31,38 +31,45 @@ class PostController extends Controller
     public function dashboard(Request $request)
     {
         $token = session('token');
-        
-        if (!$token) {
-            return back()->with('error', 'Session token is missing.');
-        }
-    
-        // Fetch logged-in user details
-        $response = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
-        $user = $response->json();
 
-        
-        // Check if API call was successful and data exists
-        if (!$response->successful() || !isset($user['user'])) {
-            return back()->with('error', 'Failed to fetch user data.');
+    if (!$token) {
+        return back()->with('error', 'Session token is missing.');
+    }
+
+    // Fetch logged-in user details
+    $response = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
+    $user = $response->json();
+
+    // Check if API call was successful and user data exists
+    if (!$response->successful() || !isset($user['user'])) {
+        return back()->with('error', 'Failed to fetch user data.');
+    }
+
+    // Determine statuses based on account type
+    $statuses = [];
+    //dd($statuses);
+    if (isset($user['user']['branch_id'])) {
+        if ($user['user']['branch_id'] == 23) {
+            $statuses = ['Archived', 'Endorsed', 'Pending']; // ✅ Only these statuses
+        } elseif ($user['user']['account_type_id'] == 7) {
+            $statuses = ['In Progress', 'Resolved']; // ✅ Only these statuses
         }
-    
-        // Count posts based on status
-        $posts = Post::select('status', \DB::raw('COUNT(*) as count'))
-            ->where(function ($query) use ($user) {
-                if (isset($user['user']['oid']) && $user['user']['oid'] == 23) {
-                    $query->where('oid', 23);
-                }
-              
-            })
-            ->whereIn('status', ['pending', 'Resolved', 'Endorsed']) // Filter relevant statuses
-            ->groupBy('status')
-            ->get();
+    }
+
+    // Fetch posts with filtered statuses and conditions
+    $posts = Post::select('status', DB::raw('COUNT(*) as count'))
+        ->where(function ($query) use ($user) {
+            if (isset($user['user']['oid']) && $user['user']['oid'] == 23) {
+                $query->where('oid', 23);
+            }
         
-        //Log::info('Fetched Posts:', $posts->toArray());
+        })
+        ->whereIn('status', $statuses) // ✅ Ensures correct statuses are selected
+        ->groupBy('status')
+        ->get();
     
         return view('dashboard', compact('user', 'posts'));
     }
-    
     
 
     public function store(Request $request)
