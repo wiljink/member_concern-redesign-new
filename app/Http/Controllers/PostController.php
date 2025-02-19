@@ -371,6 +371,8 @@ class PostController extends Controller
         // Return success response
         return back()->with('success', 'Concern has been validated and archived successfully.');
     }
+
+    
     public function reportho(Request $request)
     {
         $branchRequest = Http::get('https://loantracker.oicapp.com/api/v1/branches');

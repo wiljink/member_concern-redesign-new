@@ -25,80 +25,79 @@ class PostExportHO implements FromCollection, WithHeadings
 
         $this->loggedUser = $user['user']['oid'] ?? null;
         $this->branchManager = $user['user']['fullname'] ?? 'Unknown Manager';
-
+        
         $this->area = $area;
         $this->concern = $concern;
     }
 
     public function collection(): Collection
     {
-        // Fetch all branches
+        // Fetch branches
         $response = Http::get('https://loantracker.oicapp.com/api/v1/branches');
         $apiResponse = $response->json();
         $branches = $apiResponse['branches'] ?? [];
-
-        
+    
         if (empty($branches)) {
-            return collect(value: []);
+            return collect([]);
         }
-
-        // Map branch ID to names
+    
+        // Map branch ID to branch names
         $branchMap = [];
-        //dd($branchMap);
         foreach ($branches as $branch) {
             $branchMap[$branch['id']] = $branch['branch_name'];
-            // dd($branchMap[$branch['id']]);
         }
-
-        // Filter branches by selected area
-        $areaBranches = [];
-       
-
-        if ($this->area !== 'all') {
-            $areaBranches = array_column(
-                array_filter($branches, fn($branch) => $branch['area'] == $this->area),
-                'id'
-            );
-        }
-
-        // Query posts based on branch and area
+    
+        // Query archived posts
         $query = Post::select(
             'id', 'name', 'branch', 'contact_number', 'concern', 'message', 
             'endorse_by', 'endorse_to', 'tasks', 'endorsed_date', 'resolved_date', 
             'resolved_days', 'resolve_by', 'assess', 'member_comments'
         )
         ->where('status', 'Archived');
-        
+    
         if ($this->concern) {
             $query->where('concern', $this->concern);
         }
-       
+    
         $posts = $query->get();
-
-
-        // Fetch all endorse_by users in one API request
+    
+        // Fetch all unique endorse_by and endorse_to user IDs
         $endorseByIds = $posts->pluck('endorse_by')->unique()->filter()->toArray();
+        $endorseToIds = $posts->pluck('endorse_to')->unique()->filter()->toArray();
+    
         $userDetails = [];
-
-        if (!empty($endorseByIds)) {
-            $usersResponse = Http::withToken(session('token'))
-                ->get("https://loantracker.oicapp.com/api/v1/users", ['ids' => implode(',', $endorseByIds)]);
-            $usersData = $usersResponse->json()['users'] ?? [];
-
-            foreach ($usersData as $user) {
-                $userDetails[$user['id']] = $user['officer']['fullname'] ?? "Unknown User";
-            }
+        $endorseToDetails = [];
+    
+        // Fetch endorse_by user details
+        foreach ($endorseByIds as $userId) {
+            $response = Http::withToken(session('token'))->get("https://loantracker.oicapp.com/api/v1/users/{$userId}");
+            $userData = $response->json();
+            $userDetails[$userId] = $userData['user']['officer']['fullname'] ?? "Unknown User";
         }
-
-        // Process data for export
+    
+        // Fetch endorse_to user details
+        foreach ($endorseToIds as $userId) {
+            $response = Http::withToken(session('token'))->get("https://loantracker.oicapp.com/api/v1/users/{$userId}");
+            $userData = $response->json();
+            $endorseToDetails[$userId] = $userData['user']['officer']['fullname'] ?? "Unknown User";
+        }
+    
+        // Process posts
         foreach ($posts as $post) {
             $post->branch = $branchMap[$post->branch] ?? $post->branch;
-            $post->endorse_to = $post->endorse_to == $this->loggedUser ? $this->branchManager : $post->endorse_to;
+    
+            if (!empty($post->endorse_to) && strval($post->endorse_to) === strval($this->loggedUser)) {
+                $post->endorse_to = $this->branchManager;
+            } else {
+                $post->endorse_to = $endorseToDetails[$post->endorse_to] ?? "Unknown User";
+            }
+    
             $post->endorse_by = $userDetails[$post->endorse_by] ?? "Unknown User";
         }
-
+    
         return collect($posts);
     }
+    
 
     public function headings(): array
     {
