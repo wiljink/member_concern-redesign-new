@@ -74,7 +74,16 @@
                         <p style="color: red;">No tasks available.</p>
                         @endif
                     </td>
-                    <td>{{ $posts->resolved_days ? json_decode($posts->resolved_days, true)['days'] ?? 'N/A' : 'N/A' }} days</td>
+                    <td>@if ($posts->resolved_days)
+                        @php
+                            $resolvedDays = json_decode($posts->resolved_days, true);
+                        @endphp
+                        {{ $resolvedDays['days'] ?? 'N/A' }} days, 
+                        {{ $resolvedDays['hours'] ?? 'N/A' }} hours, 
+                        {{ $resolvedDays['minutes'] ?? 'N/A' }} minutes
+                    @else
+                        N/A
+                    @endif</td>
                     <td>{{ $posts->resolved_date ?? 'N/A' }}</td>
                     <td>{{ $posts->resolve_by ?? 'N/A' }}</td>
                     <td>{{ $posts->status ?? 'Pending' }}</td>

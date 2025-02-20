@@ -8,30 +8,51 @@
                         <table class="table table-striped">
                             <thead>
                                 <tr>
+                                    <th>Concern Type</th>
                                     <th>Status</th>
                                     <th>Count</th>
-                                    <th>Last Updated</th>
+                                    <th>Last Updated</th> <!-- New Column for Last Update -->
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($posts as $post)
-                                <tr>
-                                    <td>
-                                        @if($post->status == 'Pending')
-                                            <span class="badge bg-warning">{{ $post->status }}</span>
-                                        @elseif($post->status == 'Validate')
-                                            <span class="badge bg-success">{{ $post->status }}</span>
-                                        @elseif($post->status == 'Endorsed')
-                                            <span class="badge bg-info">{{ $post->status }}</span>
-                                        @elseif($post->status == 'Resolved')
-                                            <span class="badge bg-danger">{{ $post->status }}</span>
-                                        @else
-                                            <span class="badge bg-secondary">{{ $post->status }}</span>
-                                        @endif
-                                    </td>
-                                    <td>{{ $post->count }}</td> <!-- Now it correctly displays the count per status -->
-                                    <td>{{ \Carbon\Carbon::now()->format('Y-m-d') }}</td> <!-- Since `updated_at` isn't used, showing current date -->
-                                </tr>
+                                @foreach($concernTypes as $concern)
+                                    @php
+                                        // Get posts related to this concern
+                                        $concernPosts = $posts->where('concern', $concern);
+                                        // Get latest update for this concern
+                                        $lastUpdated = $concernPosts->max('updated_at');
+                                    @endphp
+
+                                    @if($concernPosts->isEmpty())
+                                        <tr>
+                                            <td>{{ $concern }}</td>
+                                            <td><span class="badge bg-secondary">No Data</span></td>
+                                            <td>0</td>
+                                            <td>-</td> <!-- No update available -->
+                                        </tr>
+                                    @else
+                                        @foreach($concernPosts as $post)
+                                            <tr>
+                                                <td>{{ $post->concern }}</td>
+                                                <td>
+                                                    @if($post->status == 'Pending')
+                                                        <span class="badge bg-warning">{{ $post->status }}</span>
+                                                    @elseif($post->status == 'Validate')
+                                                        <span class="badge bg-success">{{ $post->status }}</span>
+                                                    @elseif($post->status == 'Endorsed')
+                                                        <span class="badge bg-info">{{ $post->status }}</span>
+                                                    @elseif($post->status == 'Resolved')
+                                                        <span class="badge bg-danger">{{ $post->status }}</span>
+                                                    @else
+                                                        <span class="badge bg-secondary">{{ $post->status }}</span>
+                                                    @endif
+                                                </td>
+                                                <td>{{ $post->count }}</td>
+                                                <td>{{ $post->last_updated ? \Carbon\Carbon::parse($post->last_updated)->format('Y-m-d H:i:s') : '-' }}</td>
+
+                                            </tr>
+                                        @endforeach
+                                    @endif
                                 @endforeach
                             </tbody>
                         </table>
