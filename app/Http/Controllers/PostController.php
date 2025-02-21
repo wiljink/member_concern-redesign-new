@@ -72,7 +72,7 @@ class PostController extends Controller
         })
         ->whereIn('status', $statuses)
         ->where(function ($query) use ($user) {
-            
+
             // If user has account_type_id = 7, filter by endorse_to = user ID
             if (isset($user['user']['account_type_id']) && $user['user']['account_type_id'] == 7) {
                 $query->where('endorse_to', $user['user']['id']);
@@ -347,6 +347,7 @@ public function store(Request $request)
         ]);
     }
 
+
     public function validateConcern(Request $request)
     {
         // Validate inputs
@@ -355,47 +356,68 @@ public function store(Request $request)
             'assess' => 'required|string|in:satisfied,unsatisfied,unresolved',
             'member_comments' => 'nullable|string|max:500',
         ]);
-
+    
         // Retrieve the post by ID
-        $post = Post::findOrFail($validatedData['id']);
-
-        // Update the assess and member_comments fields
-        $post->update([
-            'assess' => $validatedData['assess'],
-            'member_comments' => $validatedData['member_comments'],
-        ]);
-
+        $post = Post::find($validatedData['id']);
+        if (!$post) {
+            return back()->with('error', 'Post not found.');
+        }
+    
+        // Get the authenticated user's data
+        $token = session('token');
+        if (!$token) {
+            return back()->with('error', 'Authentication token missing.');
+        }
+    
+        $response2 = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
+    
+        if ($response2->failed()) {
+            return back()->with('error', 'Failed to authenticate user.');
+        }
+    
+        $authenticatedUser = $response2->json();
+        $loggedInUser = $authenticatedUser['user']['fullname'] ?? null;
+    
+        if (!$loggedInUser) {
+            return back()->with('error', 'Unable to retrieve logged-in user details.');
+        }
+    
         // Handle based on assess value
         if (in_array($validatedData['assess'], ['satisfied', 'unsatisfied'])) {
-            // Archive the concern
+            // Update assess_date, assess, and member_comments, then archive the concern
             $post->update([
+                'assess_date' => now(), // Update assess_date
+                'assess' => $validatedData['assess'], // Update assess value
+                'member_comments' => $validatedData['member_comments'], // Update member_comments
                 'status' => 'Archived',
                 'archived_at' => now(),
             ]);
+    
+            return back()->with([
+                'success' => 'Concern has been validated successfully.',
+                'alert_type' => 'success' // Green success message
+            ]);
         } elseif ($validatedData['assess'] === 'unresolved') {
-            // Return to the manager who resolved the concern
-            if ($post->resolve_by) {
-                $manager = User::find($post->resolve_by); // Assuming User model holds managers
-
-                if ($manager) {
-                    // Update status to indicate reassignment
-                    $post->update([
-                        'status' => 'Reassigned',
-                    ]);
-
-                    // Log the reassignment for tracking
-                    \Log::info('Concern reassigned to the manager who resolved it', [
-                        'post_id' => $post->id,
-                        'manager_id' => $manager->id,
-                        'manager_name' => $manager->name,
-                    ]);
-                }
-            }
+            // Set status back to "In Progress" but DO NOT update assess_date, assess, or member_comments
+            $post->update([
+                'status' => 'In Progress',
+            ]);
+    
+            \Log::info('Concern status changed to In Progress', [
+                'post_id' => $post->id,
+                'reassigned_by' => $loggedInUser,
+            ]);
+    
+            return back()->with([
+                'success' => 'Concern has been sent back to the Manager who resolved it.',
+                'alert_type' => 'danger' // Red alert for unresolved
+            ]);
         }
-
-        // Return success response
-        return back()->with('success', 'Concern has been validated and archived successfully.');
     }
+    
+    
+
+    
 
     
     public function reportho(Request $request)

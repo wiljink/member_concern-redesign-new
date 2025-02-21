@@ -4,9 +4,9 @@
     <h1 class="text-4xl font-bold text-center">Validate Concern</h1>
     <div align='center'>
         @if(session()->has('success'))
-        <div class="alert alert-success">
-            {!! session('success') !!}
-        </div>
+            <div class="alert alert-{{ session('alert_type', 'success') }}">
+                {!! session('success') !!}
+            </div>
         @endif
     </div>
 

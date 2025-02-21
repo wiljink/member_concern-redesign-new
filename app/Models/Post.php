@@ -23,6 +23,7 @@ class Post extends Model
         'tasks',
         'endorsed_date',
         'resolved_date',
+        'assess_date',
         'assess', 
         'member_comments',
 

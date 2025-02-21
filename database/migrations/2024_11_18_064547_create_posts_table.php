@@ -26,7 +26,7 @@ return new class extends Migration
             $table->timestamp('resolved_date')->nullable();  // Add 'resolved_date' column
             $table->json('resolved_days')->nullable();
             $table->string('resolve_by')->nullable();
-            $table->string('assess_date')->nullable();
+            $table->timestamp('assess_date')->nullable();
             $table->enum('assess', ['satisfied','unsatisfied', 'unresolved'])->nullable();
             $table->string('member_comments')->nullable();
             $table->timestamps();
