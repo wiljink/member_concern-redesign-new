@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log as FacadesLog;
 use Illuminate\Support\facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Collection;
 
 class PostController extends Controller
 {
@@ -31,20 +32,20 @@ class PostController extends Controller
     public function dashboard(Request $request)
     {
         $token = session('token');
-    
+
         if (!$token) {
             return back()->with('error', 'Session token is missing.');
         }
-    
+
         // Fetch logged-in user details
         $response = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
         $user = $response->json();
-    
+
         // Check if API call was successful and user data exists
         if (!$response->successful() || !isset($user['user'])) {
             return back()->with('error', 'Failed to fetch user data.');
         }
-    
+
         // Determine statuses based on account type
         $statuses = [];
         if (isset($user['user']['branch_id'])) {
@@ -54,15 +55,15 @@ class PostController extends Controller
                 $statuses = ['In Progress', 'Resolved']; // ✅ Only these statuses
             }
         }
-    
+
         // Fetch distinct concern types from posts
         $concernTypes = Post::select('concern')->distinct()->pluck('concern');
-    
+
         // Fetch posts with filtered statuses and conditions
         $posts = Post::select(
-            'concern', 
-            'status', 
-            DB::raw('COUNT(*) as count'), 
+            'concern',
+            'status',
+            DB::raw('COUNT(*) as count'),
             DB::raw('MAX(updated_at) as last_updated') // Get the latest update
         )
         ->where(function ($query) use ($user) {
@@ -80,12 +81,12 @@ class PostController extends Controller
         })
         ->groupBy('concern', 'status')
         ->get();
-    
+
         return view('dashboard', compact('user', 'posts', 'concernTypes'));
     }
-    
-    
-    
+
+
+
 
 public function store(Request $request)
     {
@@ -356,32 +357,32 @@ public function store(Request $request)
             'assess' => 'required|string|in:satisfied,unsatisfied,unresolved',
             'member_comments' => 'nullable|string|max:500',
         ]);
-    
+
         // Retrieve the post by ID
         $post = Post::find($validatedData['id']);
         if (!$post) {
             return back()->with('error', 'Post not found.');
         }
-    
+
         // Get the authenticated user's data
         $token = session('token');
         if (!$token) {
             return back()->with('error', 'Authentication token missing.');
         }
-    
+
         $response2 = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
-    
+
         if ($response2->failed()) {
             return back()->with('error', 'Failed to authenticate user.');
         }
-    
+
         $authenticatedUser = $response2->json();
         $loggedInUser = $authenticatedUser['user']['fullname'] ?? null;
-    
+
         if (!$loggedInUser) {
             return back()->with('error', 'Unable to retrieve logged-in user details.');
         }
-    
+
         // Handle based on assess value
         if (in_array($validatedData['assess'], ['satisfied', 'unsatisfied'])) {
             // Update assess_date, assess, and member_comments, then archive the concern
@@ -392,7 +393,7 @@ public function store(Request $request)
                 'status' => 'Archived',
                 'archived_at' => now(),
             ]);
-    
+
             return back()->with([
                 'success' => 'Concern has been validated successfully.',
                 'alert_type' => 'success' // Green success message
@@ -402,97 +403,100 @@ public function store(Request $request)
             $post->update([
                 'status' => 'In Progress',
             ]);
-    
+
             \Log::info('Concern status changed to In Progress', [
                 'post_id' => $post->id,
                 'reassigned_by' => $loggedInUser,
             ]);
-    
+
             return back()->with([
                 'success' => 'Concern has been sent back to the Manager who resolved it.',
                 'alert_type' => 'danger' // Red alert for unresolved
             ]);
         }
     }
-    
-    
 
-    
 
-    
+
+
+
+
     public function reportho(Request $request)
     {
+        // Get branches from API
         $branchRequest = Http::get('https://loantracker.oicapp.com/api/v1/branches');
+        $branches = $branchRequest->json();
+        $area = $request->area;
         $areas = [];
-        
-
-        $branches = $branchRequest->json(); // Convert API response to an array
-        
-
-        $area = request()->area; // Get the area parameter from the request
-        
-        $filteredBranches = [];
 
         if ($area != 'all' && isset($area)) {
-
             foreach ($branches['branches'] as $branch) {
                 if ($branch['area'] == $area) {
-                    array_push($areas, $branch['id']);
+                    $areas[] = $branch['id'];
                 }
             }
         }
 
+        // Authenticated user
         $token = session('token');
-        $response2 = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
-        $authenticatedUser = $response2->json();
+        $userResponse = Http::withToken($token)->get("https://loantracker.oicapp.com/api/v1/users/logged-user");
 
-        if ($response2->failed()) {
+        if ($userResponse->failed()) {
             return response()->json(['error' => 'Unable to fetch user data'], 500);
         }
 
+        $authenticatedUser = $userResponse->json();
         $userId = $authenticatedUser['user']['id'] ?? null;
+
         if (!$userId) {
             return response()->json(['error' => 'Invalid user data'], 500);
         }
 
-        $loans =  Post::where('status', 'Archived')
-            ->where('concern', 'Loans');
+        // Concern types
+        $concernTypes = ['Loans', 'Deposit', 'Customer Service', 'General'];
 
-        // Count concerns
-        $loansCount = empty($areas) ? $loans->count() :
-            $loans
-            ->whereIn('branch', $areas)
-            ->count();
+        // Output arrays
+        $avgResolveDays = [];
+        $concernCounts = [];
 
-        $deposit = Post::where('status', 'Archived')
-            ->where('concern', 'Deposit');
-        $depositCount =  empty($areas) ? $deposit->count() :
-            $deposit
-            ->whereIn('branch', $areas)
-            ->count();
+        foreach ($concernTypes as $concern) {
+            $query = Post::where('status', 'Archived')
+                ->where('concern', $concern);
 
+            if (!empty($areas)) {
+                $query->whereIn('branch', $areas);
+            }
 
-        $customerServ =  Post::where('status', 'Archived')
-            ->where('concern', 'Customer Service');
-        $customerCount = empty($areas) ? $customerServ->count() :
-            $customerServ
-            ->whereIn('branch', $areas)
-            ->count();
+            $posts = $query->get();
+            $concernCounts[$concern] = $posts->count();
 
+            $totalMinutes = 0;
+            $validPosts = 0;
 
-        $general = Post::where('status', 'Archived')
-            ->where('concern', 'General');
-        $generalCount =  empty($areas) ? $general->count() :
-            $general
-            ->whereIn('branch', $areas)
-            ->count();
+            foreach ($posts as $post) {
+                if ($post->assess_date && $post->resolved_date) {
+                    $assess = Carbon::parse($post->assess_date);
+                    $resolved = Carbon::parse($post->resolved_date);
+                    $diffMinutes = $assess->diffInMinutes($resolved);
+                    $totalMinutes += $diffMinutes;
+                    $validPosts++;
+                }
+            }
 
+            $avgDays = $validPosts > 0 ? round($totalMinutes / 1440 / $validPosts, 2) : null;
+            $avgResolveDays[$concern] = $avgDays;
+        }
 
-
-        // Return the view if not an AJAX request
-        //return view('posts.headoffice.report_ho');
-        return view('posts.headoffice.report_ho', compact('loansCount', 'depositCount', 'customerCount', 'generalCount', 'areas'));
+        return view('posts.headoffice.report_ho', [
+            'loansCount'     => $concernCounts['Loans'],
+            'depositCount'   => $concernCounts['Deposit'],
+            'customerCount'  => $concernCounts['Customer Service'],
+            'generalCount'   => $concernCounts['General'],
+            'avgResolveDays' => $avgResolveDays,
+            'areas'          => $areas,
+        ]);
     }
+
 
 
     public function reportbm()
@@ -505,32 +509,39 @@ public function store(Request $request)
             return response()->json(['error' => 'Unable to fetch user data'], 500);
         }
 
-        // Extract authenticated user ID
         $userId = $authenticatedUser['user']['id'] ?? null;
 
         if (!$userId) {
             return response()->json(['error' => 'Invalid user data'], 500);
         }
 
-        $loansCount = Post::where('endorse_to', $userId)
+        $archivedPosts = Post::where('endorse_to', $userId)
             ->where('status', 'Archived')
-            ->where('concern', 'Loans')->count();
+            ->get();
 
-        $depositCount = Post::where('endorse_to', $userId)
-            ->where('status', 'Archived')
-            ->where('concern', 'Deposit')->count();
+        $grouped = $archivedPosts->groupBy('concern');
 
-        $customerCount = Post::where('endorse_to', $userId)
-            ->where('status', 'Archived')
-            ->where('concern', 'Customer Service')->count();
+        $averageDays = [];
 
-        $generalCount = Post::where('endorse_to', $userId)
-            ->where('status', 'Archived')
-            ->where('concern', 'General')->count();
+        foreach ($grouped as $concern => $posts) {
+            $days = $posts->map(function ($post) {
+                if ($post->endorsed_date && $post->resolved_date) {
+                    return Carbon::parse($post->endorsed_date)->diffInDays(Carbon::parse($post->resolved_date));
+                }
+                return null;
+            })->filter(); // removes nulls
 
+            $averageDays[$concern] = $days->count() ? round($days->avg(), 2) : null;
+        }
 
+        return view('posts.bm.report_bm', [
+            'loansCount' => $grouped->get('Loans', collect())->count(),
+            'depositCount' => $grouped->get('Deposit', collect())->count(),
+            'customerCount' => $grouped->get('Customer Service', collect())->count(),
+            'generalCount' => $grouped->get('General', collect())->count(),
 
-        return view('posts.bm.report_bm', compact('loansCount', 'depositCount', 'customerCount', 'generalCount'));
+            'averageDays' => $averageDays,
+        ]);
     }
     public function download($type)
     {

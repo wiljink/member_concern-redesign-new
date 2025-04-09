@@ -28,10 +28,11 @@ return new class extends Migration
             $table->string('resolve_by')->nullable();
             $table->timestamp('assess_date')->nullable();
             $table->enum('assess', ['satisfied','unsatisfied', 'unresolved'])->nullable();
+            $table->json('assess_days')->nullable();
             $table->string('member_comments')->nullable();
             $table->timestamps();
         });
-        
+
     }
 
     /**

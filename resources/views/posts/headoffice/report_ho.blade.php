@@ -18,10 +18,10 @@
                 </select>
 
                 <button type="submit" class="btn btn-success">Generate</button>
-                
+
             </form>
         </div>
-        
+
 
         <!-- Secondary Dropdowns for Specific Locations -->
         <div class="mb-3 text-center hidden" id="area1Dropdown">
@@ -41,53 +41,69 @@
                 <tr>
                     <th>ID</th>
                     <th>Concern Type</th>
-                    <th>Avg. Days to Resolve</th>
+                    <th>Avg. Days to Assess</th>
                     <th>Concern Count</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>1</td>
-                    <td>Loans</td>
-                    <td><span class="badge bg-secondary">2</span></td>
-                    <td>{{ $loansCount }}</td>
-                    <td>
-               
-                        <a href="{{ route('concerns.download.reportho', ['type' => 'Loans', 'areas' => implode(',', $areas)]) }}"
-                            class="btn btn-primary btn-sm">Download</a>
-                    </td> 
-                </tr>
-                <tr>
-                    <td>2</td>
-                    <td>Deposit</td>
-                    <td><span class="badge bg-secondary"> </span></td>
-                    <td>{{ $depositCount }}</td>
-                    <td>
-                        <a href="{{ route('concerns.download.reportho', ['type' => 'Deposit']) }}"
-                            class="btn btn-primary btn-sm">Download</a>
-                    </td>
-                </tr>
-                <tr>
-                    <td>3</td>
-                    <td>Customer Service</td>
-                    <td><span class="badge bg-secondary"> 1 </span></td>
-                    <td>{{ $customerCount }}</td>
-                    <td>
-                        <a href="{{ route('concerns.download.reportho', ['type' => 'Customer Service']) }}"
-                            class="btn btn-primary btn-sm">Download</a>
-                    </td>
-                </tr>
-                <tr>
-                    <td>4</td>
-                    <td>General</td>
-                    <td><span class="badge bg-secondary"> </span></td>
-                    <td>{{ $generalCount }}</td>
-                    <td>
-                        <a href="{{ route('concerns.download.reportho', ['type' => 'general']) }}"
-                            class="btn btn-primary btn-sm">Download</a>
-                    </td>
-                </tr>
+            <tr>
+                <td>1</td>
+                <td>Loans</td>
+                <td>
+        <span class="badge bg-secondary">
+            {{ $avgResolveDays['Loans'] ?? 'N/A' }}
+        </span>
+                </td>
+                <td>{{ $loansCount }}</td>
+                <td>
+                    <a href="{{ route('concerns.download.reportho', ['type' => 'Loans', 'areas' => implode(',', $areas)]) }}"
+                       class="btn btn-primary btn-sm">Download</a>
+                </td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>Deposit</td>
+                <td>
+        <span class="badge bg-secondary">
+            {{ $avgResolveDays['Deposit'] ?? 'N/A' }}
+        </span>
+                </td>
+                <td>{{ $depositCount }}</td>
+                <td>
+                    <a href="{{ route('concerns.download.reportho', ['type' => 'Deposit']) }}"
+                       class="btn btn-primary btn-sm">Download</a>
+                </td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>Customer Service</td>
+                <td>
+        <span class="badge bg-secondary">
+            {{ $avgResolveDays['Customer Service'] ?? 'N/A' }}
+        </span>
+                </td>
+                <td>{{ $customerCount }}</td>
+                <td>
+                    <a href="{{ route('concerns.download.reportho', ['type' => 'Customer Service']) }}"
+                       class="btn btn-primary btn-sm">Download</a>
+                </td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td>General</td>
+                <td>
+        <span class="badge bg-secondary">
+            {{ $avgResolveDays['General'] ?? 'N/A' }}
+        </span>
+                </td>
+                <td>{{ $generalCount }}</td>
+                <td>
+                    <a href="{{ route('concerns.download.reportho', ['type' => 'General']) }}"
+                       class="btn btn-primary btn-sm">Download</a>
+                </td>
+            </tr>
+
             </tbody>
         </table>
     </div>
