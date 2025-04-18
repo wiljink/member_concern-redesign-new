@@ -5,69 +5,46 @@
         </h3>
         <table class="table table-bordered table-striped">
             <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Concern</th>
-                    <th>Avg. Days to Resolve</th>
-                    <th>Concern Count</th>
-                    <th>Action</th> <!-- New Action Column -->
-                </tr>
+            <tr>
+                <th>ID</th>
+                <th>Concern</th>
+                <th>Avg. Time to Resolve</th>
+                <th>Concern Count</th>
+                <th>Action</th>
+            </tr>
             </thead>
             <tbody>
-            <tr>
-                <td>1</td>
-                <td>Loans</td>
-                <td>
-            <span class="badge bg-secondary">
-                {{ $averageDays['Loans'] ?? '-' }}
-            </span>
-                </td>
-                <td>{{ $loansCount }}</td>
-                <td>
-                    <a href="{{ route('concerns.download.report', ['type' => 'Loans']) }}" class="btn btn-primary btn-sm">Download</a>
-                </td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td>Deposit</td>
-                <td>
-            <span class="badge bg-secondary">
-                {{ $averageDays['Deposit'] ?? '-' }}
-            </span>
-                </td>
-                <td>{{ $depositCount }}</td>
-                <td>
-                    <a href="{{ route('concerns.download.report', ['type' => 'Deposit']) }}" class="btn btn-primary btn-sm">Download</a>
-                </td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td>Customer Service</td>
-                <td>
-            <span class="badge bg-secondary">
-                {{ $averageDays['Customer Service'] ?? '-' }}
-            </span>
-                </td>
-                <td>{{ $customerCount }}</td>
-                <td>
-                    <a href="{{ route('concerns.download.report', ['type' => 'Customer Service']) }}" class="btn btn-primary btn-sm">Download</a>
-                </td>
-            </tr>
-            <tr>
-                <td>4</td>
-                <td>General</td>
-                <td>
-            <span class="badge bg-secondary">
-                {{ $averageDays['General'] ?? '-' }}
-            </span>
-                </td>
-                <td>{{ $generalCount }}</td>
-                <td>
-                    <a href="{{ route('concerns.download.report', ['type' => 'general']) }}" class="btn btn-primary btn-sm">Download</a>
-                </td>
-            </tr>
-            </tbody>
+            @php
+                $categories = [
+                    ['id' => 1, 'label' => 'Loans', 'count' => $loansCount],
+                    ['id' => 2, 'label' => 'Deposit', 'count' => $depositCount],
+                    ['id' => 3, 'label' => 'Customer Service', 'count' => $customerCount],
+                    ['id' => 4, 'label' => 'General', 'count' => $generalCount],
+                ];
+            @endphp
 
+            @foreach ($categories as $category)
+                <tr>
+                    <td>{{ $category['id'] }}</td>
+                    <td>{{ $category['label'] }}</td>
+                    <td>
+                            <span class="badge bg-secondary">
+                                @if (!empty($averageTimes[$category['label']]))
+                                    {{ $averageTimes[$category['label']]['days'] }}d
+                                    {{ $averageTimes[$category['label']]['hours'] }}h
+                                    {{ $averageTimes[$category['label']]['minutes'] }}m
+                                @else
+                                    No data
+                                @endif
+                            </span>
+                    </td>
+                    <td>{{ $category['count'] }}</td>
+                    <td>
+                        <a href="{{ route('concerns.download.report', ['type' => $category['label']]) }}" class="btn btn-primary btn-sm">Download</a>
+                    </td>
+                </tr>
+            @endforeach
+            </tbody>
         </table>
     </div>
 </x-app-layout>

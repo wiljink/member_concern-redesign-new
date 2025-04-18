@@ -22,7 +22,7 @@
                     <th scope="col" class="border bg-slate-200 text-center font-poppins font-bold">CONCERN RECEIVED DATE</th>
                     <th scope="col" class="border bg-slate-200 text-center font-poppins font-bold">CONCERN</th>
                     <th scope="col" class="border bg-slate-200 text-center font-poppins font-bold">MESSAGE</th>
-                
+
                     <th scope="col" class="border bg-slate-200 text-center font-poppins font-bold">ENDORSED BY</th>
                     <th scope="col" class="border bg-slate-200 text-center font-poppins font-bold">TASK</th>
                     <th scope="col" class="border bg-slate-200 text-center font-poppins font-bold">DAYS RESOLVED</th>
@@ -60,10 +60,10 @@
                     $api_link = "https://loantracker.oicapp.com/api/v1/users/" . $endorse_by;
                     $response3 = Http::withToken($token)->get($api_link);
                     $user = $response3->json();
-                
+
                     @endphp
                     <td>{{ $user['user']['officer']['fullname'] }}</td>
-                    
+
                     <td class="expanded-column">
                         @php
                         $tasks = json_decode($posts->tasks, true);
@@ -78,14 +78,26 @@
                         <p style="color: red;">No tasks available.</p>
                         @endif
                     </td>
-                    <td>{{ $posts->resolved_days ? json_decode($posts->resolved_days, true)['days'] ?? 'N/A' : 'N/A' }} days</td>
+                    @php
+                        $resolved = $posts->resolved_days ? json_decode($posts->resolved_days, true) : null;
+                    @endphp
+
+                    <td>
+                        @if ($resolved)
+                            {{ $resolved['days'] ?? 0 }} days,
+                            {{ $resolved['hours'] ?? 0 }} hours,
+                            {{ $resolved['seconds'] ?? 0 }} seconds
+                        @else
+                            N/A
+                        @endif
+                    </td>
                     <td>{{ $posts->resolved_date ?? 'N/A' }}</td>
                     <td>{{ $posts->resolve_by ?? 'N/A' }}</td>
                     <td>{{ $posts->status ?? 'Pending' }}</td>
                     <td>{{ $posts->member_comments ?? 'N/A' }}</td>
                     <td>{{ $posts->assess ?? 'N/A' }}</td>
                     <td>
-            
+
                         @if($posts->status == 'Resolved')
                         <a href="#" id="validateButton"
                                class="btn btn-secondary"
@@ -103,7 +115,7 @@
                                 VALIDATE
                             </a>
                         @endif
-                    
+
                     </td>
                 </tr>
                 @endforeach

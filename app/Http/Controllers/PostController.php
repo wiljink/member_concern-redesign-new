@@ -7,6 +7,7 @@ use App\Exports\PostExportHO;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
 use Carbon\Carbon;
+use Carbon\CarbonInterval;
 use Illuminate\Container\Attributes\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -524,17 +525,33 @@ public function store(Request $request)
 
         $grouped = $archivedPosts->groupBy('concern');
 
-        $averageDays = [];
+        $averageTimes = [];
 
         foreach ($grouped as $concern => $posts) {
-            $days = $posts->map(function ($post) {
-                if ($post->endorsed_date && $post->resolved_date) {
-                    return Carbon::parse($post->endorsed_date)->diffInDays(Carbon::parse($post->resolved_date));
-                }
-                return null;
-            })->filter(); // removes nulls
+            $totalSeconds = 0;
 
-            $averageDays[$concern] = $days->count() ? round($days->avg(), 2) : null;
+            foreach ($posts as $post) {
+                if ($post->endorsed_date && $post->resolved_date) {
+                    $start = Carbon::parse($post->endorsed_date);
+                    $end = Carbon::parse($post->resolved_date);
+                    $totalSeconds += $end->diffInSeconds($start);
+                }
+            }
+
+            $totalPosts = $posts->count();
+
+            if ($totalPosts > 0) {
+                $averageSeconds = $totalSeconds / $totalPosts;
+                $interval = CarbonInterval::seconds($averageSeconds)->cascade();
+
+                $averageTimes[$concern] = [
+                    'days' => $interval->d,
+                    'hours' => $interval->h,
+                    'minutes' => $interval->i,
+                ];
+            } else {
+                $averageTimes[$concern] = null;
+            }
         }
 
         return view('posts.bm.report_bm', [
@@ -543,7 +560,7 @@ public function store(Request $request)
             'customerCount' => $grouped->get('Customer Service', collect())->count(),
             'generalCount' => $grouped->get('General', collect())->count(),
 
-            'averageDays' => $averageDays,
+            'averageTimes' => $averageTimes,
         ]);
     }
     public function download($type)
