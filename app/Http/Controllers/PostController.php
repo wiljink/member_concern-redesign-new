@@ -136,6 +136,7 @@ public function store(Request $request)
         $post->endorse_by = $endorse_by;
         $post->endorse_to = $endorse_to;
         $post->status = 'Endorsed';
+        $post->endorsed_date = Carbon::now(); // Add the endorsed date
 
         $post->save();
 
@@ -300,6 +301,8 @@ public function store(Request $request)
                     'seconds' => 0,
                 ]);
             }
+
+
         } else {
             $post->status = 'In Progress';
         }

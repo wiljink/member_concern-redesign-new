@@ -65,7 +65,9 @@ return [
     |
     */
 
-    'timezone' => env('APP_TIMEZONE', 'UTC'),
+    // config/app.php
+    'timezone' => 'Asia/Manila', // or your correct timezone
+
 
     /*
     |--------------------------------------------------------------------------
